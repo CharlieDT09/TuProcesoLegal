@@ -154,9 +154,15 @@ function addMessage(role, content) {
 
   const bubble = document.createElement('div');
   bubble.className = `tpl-bubble ${role}`;
-  bubble.textContent = content;
-  row.appendChild(bubble);
 
+  if (role === 'assistant') {
+    const html = DOMPurify.sanitize(marked.parse(content));
+    bubble.innerHTML = html;
+  } else {
+    bubble.textContent = content;
+  }
+
+  row.appendChild(bubble);
   messagesEl.appendChild(row);
   scrollToBottom();
 }
