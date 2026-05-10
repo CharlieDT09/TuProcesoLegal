@@ -85,13 +85,16 @@ html, body {
   width: 42px;
   height: 42px;
   border-radius: 11px;
-  background: linear-gradient(135deg, var(--gold), var(--gold-l));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 21px;
-  box-shadow: 0 4px 18px rgba(192, 157, 60, 0.3);
   flex-shrink: 0;
+  overflow: hidden;
+}
+.tpl-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .tpl-title {
@@ -129,7 +132,8 @@ html, body {
   padding: 48px 16px 32px;
 }
 
-.tpl-welcome-icon { font-size: 56px; margin-bottom: 18px; }
+.tpl-welcome-icon { width: 110px; height: 110px; margin: 0 auto 18px; }
+.tpl-welcome-icon img { width: 100%; height: 100%; object-fit: contain; }
 
 .tpl-welcome-h1 {
   font-family: var(--serif);
@@ -204,14 +208,18 @@ html, body {
   width: 33px;
   height: 33px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--gold), var(--gold-l));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
   flex-shrink: 0;
   margin-right: 10px;
   margin-top: 2px;
+  overflow: hidden;
+}
+.tpl-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .tpl-bubble {
@@ -488,17 +496,20 @@ html, body {
 }
 
 .lp-hero-icon {
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--gold), var(--gold-l));
+  width: 180px;
+  height: 180px;
+  border-radius: 0;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 42px;
-  box-shadow: 0 8px 40px rgba(192, 157, 60, 0.35);
   margin-bottom: 32px;
   animation: heroIconPulse 3s ease-in-out infinite;
+}
+.lp-hero-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 @keyframes heroIconPulse {
@@ -724,10 +735,10 @@ html, body {
   .tpl-welcome-h1 { font-size: 24px; }
   .tpl-bubble     { max-width: 88%; }
   .tpl-header     { padding: 12px 16px; }
-  .tpl-logo       { width: 36px; height: 36px; font-size: 18px; }
+  .tpl-logo       { width: 36px; height: 36px; }
 
   .lp-hero        { padding: 48px 16px 64px; }
-  .lp-hero-icon   { width: 72px; height: 72px; font-size: 34px; }
+  .lp-hero-icon   { width: 130px; height: 130px; }
   .lp-feature     { max-width: 100%; flex-basis: 100%; }
   .lp-card        { max-width: 100%; }
   .lp-badges      { gap: 16px; }
