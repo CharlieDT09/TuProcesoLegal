@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Tu Proceso Legal — Orientación jurídica basada en la legislación vigente de la República de Panamá." />
+  <meta name="theme-color" content="#070c18" />
+  <title>Tu Proceso Legal ⚖️</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500&display=swap" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ── RAÍZ ─────────────────────────────────── -->
+  <div class="tpl-root">
+
+    <!-- Fondo decorativo -->
+    <div class="tpl-bg"></div>
+
+    <!-- ── HEADER ──────────────────────────────── -->
+    <header class="tpl-header">
+      <div class="tpl-brand">
+        <div class="tpl-logo">⚖️</div>
+        <div>
+          <div class="tpl-title">Tu Proceso <span class="accent">Legal</span></div>
+          <div class="tpl-sub">Asistente Jurídico · República de Panamá</div>
+        </div>
+      </div>
+      <div class="tpl-flag">🇵🇦</div>
+    </header>
+
+    <!-- ── CHAT ────────────────────────────────── -->
+    <main class="tpl-main" id="chatMain">
+
+      <!-- Pantalla de bienvenida -->
+      <div class="tpl-welcome" id="welcomeScreen">
+        <div class="tpl-welcome-icon">⚖️</div>
+        <h1 class="tpl-welcome-h1">Tu Proceso <span class="accent">Legal</span></h1>
+        <p class="tpl-welcome-p">
+          Orientación jurídica basada en la legislación vigente de Panamá,
+          disponible cuando la necesites.
+        </p>
+        <p class="tpl-disclaimer">
+          ⚠️ Este servicio es informativo y no reemplaza la asesoría
+          de un abogado colegiado en la República de Panamá.
+        </p>
+
+        <p class="tpl-sug-label">Consultas frecuentes</p>
+        <div class="tpl-suggestions" id="suggestions">
+          <button class="tpl-sug-btn">¿Cuáles son mis derechos si me despiden sin causa justificada?</button>
+          <button class="tpl-sug-btn">¿Cómo funciona el proceso de divorcio en Panamá?</button>
+          <button class="tpl-sug-btn">¿Qué dice la ley sobre los contratos de arrendamiento?</button>
+          <button class="tpl-sug-btn">¿Cuáles son mis derechos como consumidor en Panamá?</button>
+          <button class="tpl-sug-btn">¿Qué es el período de prueba laboral según el Código de Trabajo?</button>
+        </div>
+      </div>
+
+      <!-- Mensajes (se insertan aquí) -->
+      <div id="messages"></div>
+
+      <!-- Indicador de carga -->
+      <div class="tpl-row assistant hidden" id="typingIndicator">
+        <div class="tpl-avatar">⚖️</div>
+        <div class="tpl-bubble assistant tpl-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div class="tpl-error hidden" id="errorBanner"></div>
+
+      <!-- Ancla de scroll -->
+      <div id="bottom"></div>
+    </main>
+
+    <!-- ── FOOTER / INPUT ───────────────────────── -->
+    <footer class="tpl-footer">
+      <div class="tpl-input-row">
+        <button class="tpl-clear hidden" id="clearBtn" title="Nueva consulta">🗑️</button>
+        <textarea
+          class="tpl-input"
+          id="chatInput"
+          placeholder="Escribe tu consulta jurídica… (Enter para enviar)"
+          rows="1"
+        ></textarea>
+        <button class="tpl-send" id="sendBtn">➤</button>
+      </div>
+      <p class="tpl-note">
+        Tu Proceso Legal es orientación informativa · No reemplaza a un abogado colegiado ·
+        <strong>© 2025 Tu Proceso Legal</strong>
+      </p>
+    </footer>
+
+  </div><!-- /.tpl-root -->
+
+  <script src="app.js"></script>
+</body>
+</html>
