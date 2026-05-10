@@ -84,17 +84,16 @@ html, body {
 .tpl-logo {
   width: 42px;
   height: 42px;
-  border-radius: 11px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  overflow: hidden;
 }
 .tpl-logo img {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  mix-blend-mode: screen;
 }
 
 .tpl-title {
@@ -133,7 +132,7 @@ html, body {
 }
 
 .tpl-welcome-icon { width: 110px; height: 110px; margin: 0 auto 18px; }
-.tpl-welcome-icon img { width: 100%; height: 100%; object-fit: contain; }
+.tpl-welcome-icon img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: screen; }
 
 .tpl-welcome-h1 {
   font-family: var(--serif);
@@ -220,6 +219,7 @@ html, body {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  mix-blend-mode: screen;
 }
 
 .tpl-bubble {
@@ -510,6 +510,7 @@ html, body {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  mix-blend-mode: screen;
 }
 
 @keyframes heroIconPulse {
