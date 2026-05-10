@@ -100,7 +100,7 @@ exports.handler = async function (event) {
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: 'claude-opus-4-5',
+          model: 'claude-3-5-sonnet-20241022',
           max_tokens: 1024,
           system: SYSTEM_PROMPT,
           messages: messages,
@@ -111,7 +111,11 @@ exports.handler = async function (event) {
         const errBody = await anthropicRes.json().catch(() => ({}));
         console.error('Anthropic API error:', anthropicRes.status, JSON.stringify(errBody));
         const msg = errBody?.error?.message || `Error ${anthropicRes.status}`;
-        return response({ error: `Error de API: ${msg}` }, 502);
+        // Mensajes claros según el tipo de error
+        if (anthropicRes.status === 401) return response({ error: 'API key inválida. Verifica la variable ANTHROPIC_API_KEY en Netlify.' }, 502);
+        if (anthropicRes.status === 429) return response({ error: 'Límite de uso alcanzado o sin créditos. Verifica tu cuenta en console.anthropic.com.' }, 502);
+        if (anthropicRes.status === 403) return response({ error: 'Sin acceso. Verifica que tu cuenta tenga créditos activos en console.anthropic.com.' }, 502);
+        return response({ error: `Error de Anthropic (${anthropicRes.status}): ${msg}` }, 502);
       }
 
       const data = await anthropicRes.json();
