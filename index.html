@@ -12,8 +12,77 @@
 </head>
 <body>
 
+  <!-- ══ LANDING PAGE ════════════════════════════ -->
+  <div id="landing" class="lp-page">
+
+    <!-- Fondo animado con iconos flotantes -->
+    <div class="lp-bg" id="lpBg" aria-hidden="true"></div>
+
+    <!-- ── SECCIÓN HERO ──────────────────────── -->
+    <section class="lp-hero">
+      <div class="lp-hero-icon">⚖️</div>
+      <h1 class="lp-hero-h1">Bienvenido a <span class="accent">TuProcesoIA</span></h1>
+      <p class="lp-hero-desc">
+        Tu guía inteligente en el mundo del derecho panameño. Resolvemos tus
+        dudas legales con claridad, rapidez y respeto, basándonos en los
+        códigos y reformas vigentes de Panamá. ⚖️ 🇵🇦
+      </p>
+
+      <div class="lp-features">
+        <div class="lp-feature"><span class="lp-feat-icon">🛡️</span> Información confidencial y privada</div>
+        <div class="lp-feature"><span class="lp-feat-icon">📖</span> Basado en los códigos panameños vigentes</div>
+        <div class="lp-feature"><span class="lp-feat-icon">✨</span> Orientación clara, paso a paso</div>
+      </div>
+
+      <button class="lp-cta" id="startChatHero">Iniciar consulta &rarr;</button>
+
+      <p class="lp-hero-note">
+        ⚖️ TuProcesoIA ofrece orientación legal general y no sustituye el asesoramiento
+        de un abogado colegiado en Panamá.
+      </p>
+
+      <a class="lp-scroll-hint" href="#lpInfo" aria-label="Ver más">
+        Descubre más<br><span class="lp-chevron">&#8964;</span>
+      </a>
+    </section>
+
+    <!-- ── SECCIÓN INFO ──────────────────────── -->
+    <section class="lp-info" id="lpInfo">
+
+      <div class="lp-badges">
+        <div class="lp-badge"><span>⚖️</span><small>JUSTICIA</small></div>
+        <div class="lp-badge"><span>🤖</span><small>INTELIGENCIA ARTIFICIAL</small></div>
+        <div class="lp-badge"><span>🔨</span><small>CÓDIGOS LEGALES</small></div>
+      </div>
+
+      <h2 class="lp-info-h2">Derecho <span class="accent">inteligente</span>, al alcance de todos</h2>
+      <p class="lp-info-sub">Tecnología legal panameña con la solidez de un código y la agilidad de la IA.</p>
+
+      <div class="lp-cards">
+        <div class="lp-card">
+          <div class="lp-card-icon">💬</div>
+          <h3>¿Qué puedo consultar?</h3>
+          <p>Consulta temas legales como divorcios, herencias, denuncias, derechos laborales, contratos, procesos judiciales y legislación vigente en Panamá.</p>
+        </div>
+        <div class="lp-card">
+          <div class="lp-card-icon">✨</div>
+          <h3>¿Cómo funciona?</h3>
+          <p>Escribe tu consulta, nuestra IA la analiza con base legal y recibes orientación clara en segundos.</p>
+        </div>
+        <div class="lp-card">
+          <div class="lp-card-icon">🏛️</div>
+          <h3>¿Quiénes somos?</h3>
+          <p>Somos una plataforma legal impulsada por inteligencia artificial, creada para hacer el derecho más accesible, claro y práctico para todos.</p>
+        </div>
+      </div>
+
+      <button class="lp-cta" id="startChatInfo">Iniciar consulta &rarr;</button>
+    </section>
+
+  </div><!-- /#landing -->
+
   <!-- ── RAÍZ ─────────────────────────────────── -->
-  <div class="tpl-root">
+  <div class="tpl-root" id="appRoot" style="display:none">
 
     <!-- Fondo decorativo -->
     <div class="tpl-bg"></div>

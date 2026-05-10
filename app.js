@@ -2,6 +2,40 @@
 // Tu Proceso Legal — Lógica del chatbot
 // ================================================
 
+// ── Landing Page ─────────────────────────────────
+(function initLanding() {
+  const landing = document.getElementById('landing');
+  const appRoot = document.getElementById('appRoot');
+
+  // Iconos flotantes de fondo
+  const FLOAT_ITEMS = [
+    '⚖️','🏛️','⭐','📄','📌','🔨','🛡️','📋','👨‍⚖️','📜',
+    '⚖️','🏛️','⭐','📄','📌','🔨','🛡️','📋','⚖️','🏛️',
+    'PA','PA','PA','PA','PA','PA',
+  ];
+
+  const bg = document.getElementById('lpBg');
+  FLOAT_ITEMS.forEach((item, i) => {
+    const el = document.createElement('div');
+    el.className = 'lp-float' + (item === 'PA' ? ' is-text' : '');
+    el.textContent = item;
+    el.style.left   = (Math.random() * 96) + '%';
+    el.style.top    = (Math.random() * 96) + '%';
+    el.style.setProperty('--dur',   (6 + Math.random() * 8) + 's');
+    el.style.setProperty('--delay', (Math.random() * 5) + 's');
+    bg.appendChild(el);
+  });
+
+  function launchChat() {
+    landing.classList.add('lp-exit');
+    landing.addEventListener('animationend', () => landing.remove(), { once: true });
+    appRoot.style.display = '';
+  }
+
+  document.getElementById('startChatHero').addEventListener('click', launchChat);
+  document.getElementById('startChatInfo').addEventListener('click', launchChat);
+})();
+
 const chatMain       = document.getElementById('chatMain');
 const messagesEl     = document.getElementById('messages');
 const welcomeScreen  = document.getElementById('welcomeScreen');
