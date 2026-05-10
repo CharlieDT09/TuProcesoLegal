@@ -100,7 +100,7 @@ exports.handler = async function (event) {
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-opus-4-5',
           max_tokens: 1024,
           system: SYSTEM_PROMPT,
           messages: messages,
@@ -108,7 +108,10 @@ exports.handler = async function (event) {
       });
 
       if (!anthropicRes.ok) {
-        throw new Error(`Anthropic error: ${anthropicRes.status}`);
+        const errBody = await anthropicRes.json().catch(() => ({}));
+        console.error('Anthropic API error:', anthropicRes.status, JSON.stringify(errBody));
+        const msg = errBody?.error?.message || `Error ${anthropicRes.status}`;
+        return response({ error: `Error de API: ${msg}` }, 502);
       }
 
       const data = await anthropicRes.json();
@@ -116,8 +119,8 @@ exports.handler = async function (event) {
       return response({ reply });
 
     } catch (err) {
-      console.error('Error Anthropic API:', err);
-      return response({ error: 'Error al procesar la consulta. Intenta de nuevo.' }, 502);
+      console.error('Error Anthropic API:', err.message);
+      return response({ error: `Error de conexión: ${err.message}` }, 502);
     }
   }
 
