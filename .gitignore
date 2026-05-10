@@ -2,5 +2,6 @@
 .env.local
 node_modules/
 .netlify/
+.claude/
 *.log
 .DS_Store
