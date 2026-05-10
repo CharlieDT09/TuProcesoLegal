@@ -119,7 +119,7 @@ async function sendMessage(text) {
       if (data.error === 'limite_alcanzado') {
         showError('Has alcanzado el límite de 10 consultas gratuitas este mes. Actualiza a Plan Pro para continuar.');
       } else {
-        showError('Error al procesar tu consulta. Intenta de nuevo.');
+        showError(data.error || 'Error al procesar tu consulta. Intenta de nuevo.');
       }
       // Remover el último mensaje del usuario del historial si hubo error
       history.pop();

@@ -2,7 +2,8 @@
   publish   = "."
   functions = "netlify/functions"
 
-# Sin build step — es HTML/CSS/JS puro, no necesita compilación
+[build.environment]
+  NODE_VERSION = "18"
 
 [[redirects]]
   from   = "/*"
