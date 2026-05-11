@@ -114,6 +114,25 @@ html, body {
 
 .tpl-flag { font-size: 22px; }
 
+.tpl-back-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 7px 16px;
+  color: var(--muted);
+  font-size: 13px;
+  font-family: var(--sans);
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, color 0.18s;
+  white-space: nowrap;
+}
+
+.tpl-back-btn:hover {
+  background: var(--gold-dim);
+  border-color: rgba(192, 157, 60, 0.45);
+  color: var(--text);
+}
+
 /* ── Main ────────────────────────────────────── */
 .tpl-main {
   flex: 1;

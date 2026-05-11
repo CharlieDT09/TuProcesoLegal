@@ -3,11 +3,10 @@
 // ================================================
 
 // ── Landing Page ─────────────────────────────────
-(function initLanding() {
-  const landing = document.getElementById('landing');
-  const appRoot = document.getElementById('appRoot');
+const landing = document.getElementById('landing');
+const appRoot = document.getElementById('appRoot');
 
-  // Iconos flotantes de fondo
+(function initLanding() {
   const FLOAT_ITEMS = [
     '⚖️','🏛️','⭐','📄','📌','🔨','🛡️','📋','👨‍⚖️','📜',
     '⚖️','🏛️','⭐','📄','📌','🔨','🛡️','📋','⚖️','🏛️',
@@ -26,29 +25,52 @@
     bg.appendChild(el);
   });
 
-  function launchChat() {
-    landing.classList.add('lp-exit');
-    landing.addEventListener('animationend', () => landing.remove(), { once: true });
-    appRoot.style.display = '';
-  }
-
   document.getElementById('startChatHero').addEventListener('click', launchChat);
   document.getElementById('startChatInfo').addEventListener('click', launchChat);
 })();
 
-const chatMain       = document.getElementById('chatMain');
-const messagesEl     = document.getElementById('messages');
-const welcomeScreen  = document.getElementById('welcomeScreen');
-const typingIndicator= document.getElementById('typingIndicator');
-const errorBanner    = document.getElementById('errorBanner');
-const chatInput      = document.getElementById('chatInput');
-const sendBtn        = document.getElementById('sendBtn');
-const clearBtn       = document.getElementById('clearBtn');
-const suggestions    = document.querySelectorAll('.tpl-sug-btn');
+function launchChat() {
+  landing.classList.add('lp-exit');
+  landing.addEventListener('animationend', () => {
+    landing.style.display = 'none';
+    landing.classList.remove('lp-exit');
+  }, { once: true });
+  appRoot.style.display = '';
+}
+
+function goToLanding() {
+  history = [];
+  messagesEl.innerHTML = '';
+  welcomeScreen.classList.remove('hidden');
+  clearBtn.classList.add('hidden');
+  hideError();
+  chatInput.value = '';
+  chatInput.style.height = 'auto';
+  sendBtn.classList.remove('active');
+  isLoading = false;
+  chatInput.disabled = false;
+  typingIndicator.classList.add('hidden');
+
+  appRoot.style.display = 'none';
+  landing.style.display = '';
+}
+
+const chatMain        = document.getElementById('chatMain');
+const messagesEl      = document.getElementById('messages');
+const welcomeScreen   = document.getElementById('welcomeScreen');
+const typingIndicator = document.getElementById('typingIndicator');
+const errorBanner     = document.getElementById('errorBanner');
+const chatInput       = document.getElementById('chatInput');
+const sendBtn         = document.getElementById('sendBtn');
+const clearBtn        = document.getElementById('clearBtn');
+const suggestions     = document.querySelectorAll('.tpl-sug-btn');
 
 // Historial de mensajes para enviar al backend
 let history = [];
 let isLoading = false;
+
+// ── Botón regresar ────────────────────────────────
+document.getElementById('backToLanding').addEventListener('click', goToLanding);
 
 // ── Sugerencias ──────────────────────────────────
 suggestions.forEach(btn => {
@@ -57,10 +79,8 @@ suggestions.forEach(btn => {
 
 // ── Input ────────────────────────────────────────
 chatInput.addEventListener('input', () => {
-  // Auto-resize
   chatInput.style.height = 'auto';
   chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
-  // Activar botón
   sendBtn.classList.toggle('active', chatInput.value.trim().length > 0);
 });
 
@@ -89,21 +109,17 @@ clearBtn.addEventListener('click', () => {
 async function sendMessage(text) {
   if (!text || isLoading) return;
 
-  // Ocultar bienvenida
   welcomeScreen.classList.add('hidden');
   clearBtn.classList.remove('hidden');
   hideError();
 
-  // Limpiar input
   chatInput.value = '';
   chatInput.style.height = 'auto';
   sendBtn.classList.remove('active');
 
-  // Agregar mensaje del usuario
   addMessage('user', text);
   history.push({ role: 'user', content: text });
 
-  // Mostrar loading
   setLoading(true);
 
   try {
@@ -121,21 +137,22 @@ async function sendMessage(text) {
       } else {
         showError(data.error || 'Error al procesar tu consulta. Intenta de nuevo.');
       }
-      // Remover el último mensaje del usuario del historial si hubo error
       history.pop();
       return;
     }
 
     const reply = data.reply;
-    addMessage('assistant', reply);
+    setLoading(false);
+    await addMessage('assistant', reply);
     history.push({ role: 'assistant', content: reply });
 
   } catch (err) {
     console.error(err);
     showError('Error de conexión. Verifica tu internet e intenta de nuevo.');
     history.pop();
-  } finally {
     setLoading(false);
+  } finally {
+    chatInput.disabled = false;
     chatInput.focus();
   }
 }
@@ -156,15 +173,41 @@ function addMessage(role, content) {
   bubble.className = `tpl-bubble ${role}`;
 
   if (role === 'assistant') {
-    const html = DOMPurify.sanitize(marked.parse(content));
-    bubble.innerHTML = html;
+    row.appendChild(bubble);
+    messagesEl.appendChild(row);
+    scrollToBottom();
+    return typeMessage(bubble, content);
   } else {
     bubble.textContent = content;
+    row.appendChild(bubble);
+    messagesEl.appendChild(row);
+    scrollToBottom();
+    return Promise.resolve();
   }
+}
 
-  row.appendChild(bubble);
-  messagesEl.appendChild(row);
-  scrollToBottom();
+// ── Efecto typewriter para respuestas de la IA ────
+function typeMessage(bubble, content) {
+  const CHARS_PER_TICK = 4;
+  const TICK_MS = 18;
+  let pos = 0;
+
+  return new Promise(resolve => {
+    const timer = setInterval(() => {
+      pos = Math.min(pos + CHARS_PER_TICK, content.length);
+      const partial = content.slice(0, pos);
+      bubble.innerHTML = DOMPurify.sanitize(marked.parse(partial));
+
+      if (pos % 80 === 0 || pos === content.length) {
+        scrollToBottom();
+      }
+
+      if (pos >= content.length) {
+        clearInterval(timer);
+        resolve();
+      }
+    }, TICK_MS);
+  });
 }
 
 // ── Loading ───────────────────────────────────────
