@@ -113,7 +113,8 @@ function restoreHistory() {
     if (!saved) return;
     const parsed = JSON.parse(saved);
     if (!Array.isArray(parsed) || parsed.length === 0) return;
-    history = parsed;
+    history = parsed.filter(msg => msg && typeof msg.role === 'string' && typeof msg.content === 'string');
+    if (history.length === 0) return;
     history.forEach(msg => renderSavedMessage(msg.role, msg.content));
     welcomeScreen.classList.add('hidden');
     clearBtn.classList.remove('hidden');
@@ -203,6 +204,7 @@ async function sendMessage(text) {
   sendBtn.classList.remove('active');
 
   addMessage('user', text);
+  const userRow = messagesEl.lastElementChild;
   history.push({ role: 'user', content: text });
 
   setLoading(true);
@@ -218,12 +220,14 @@ async function sendMessage(text) {
     if (!data) {
       showError('Respuesta inesperada del servidor. Intenta de nuevo.');
       history.pop();
+      userRow.remove();
       return;
     }
 
     if (!response.ok) {
       showError(data.error || 'Error al procesar tu consulta. Intenta de nuevo.');
       history.pop();
+      userRow.remove();
       return;
     }
 
@@ -236,6 +240,7 @@ async function sendMessage(text) {
   } catch (err) {
     showError('Error de conexión. Verifica tu internet e intenta de nuevo.');
     history.pop();
+    userRow.remove();
   } finally {
     setLoading(false);
     chatInput.disabled = false;
