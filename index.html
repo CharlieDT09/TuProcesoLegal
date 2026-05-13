@@ -121,11 +121,11 @@
 
         <p class="tpl-sug-label">Consultas frecuentes</p>
         <div class="tpl-suggestions" id="suggestions">
-          <button class="tpl-sug-btn">¿Cuáles son mis derechos si me despiden sin causa justificada?</button>
-          <button class="tpl-sug-btn">¿Cómo funciona el proceso de divorcio en Panamá?</button>
-          <button class="tpl-sug-btn">¿Qué dice la ley sobre los contratos de arrendamiento?</button>
-          <button class="tpl-sug-btn">¿Cuáles son mis derechos como consumidor en Panamá?</button>
-          <button class="tpl-sug-btn">¿Qué es el período de prueba laboral según el Código de Trabajo?</button>
+          <button class="tpl-sug-btn" aria-label="Consultar: derechos al ser despedido sin causa">¿Cuáles son mis derechos si me despiden sin causa justificada?</button>
+          <button class="tpl-sug-btn" aria-label="Consultar: proceso de divorcio en Panamá">¿Cómo funciona el proceso de divorcio en Panamá?</button>
+          <button class="tpl-sug-btn" aria-label="Consultar: ley sobre contratos de arrendamiento">¿Qué dice la ley sobre los contratos de arrendamiento?</button>
+          <button class="tpl-sug-btn" aria-label="Consultar: derechos del consumidor en Panamá">¿Cuáles son mis derechos como consumidor en Panamá?</button>
+          <button class="tpl-sug-btn" aria-label="Consultar: período de prueba laboral">¿Qué es el período de prueba laboral según el Código de Trabajo?</button>
         </div>
       </div>
 
@@ -141,7 +141,7 @@
       </div>
 
       <!-- Error -->
-      <div class="tpl-error hidden" id="errorBanner"></div>
+      <div class="tpl-error hidden" id="errorBanner" role="alert" aria-live="assertive"></div>
 
       <!-- Ancla de scroll -->
       <div id="bottom"></div>
@@ -150,14 +150,15 @@
     <!-- ── FOOTER / INPUT ───────────────────────── -->
     <footer class="tpl-footer">
       <div class="tpl-input-row">
-        <button class="tpl-clear hidden" id="clearBtn" title="Nueva consulta">🗑️</button>
+        <button class="tpl-clear hidden" id="clearBtn" title="Nueva consulta" aria-label="Limpiar conversación">🗑️</button>
         <textarea
           class="tpl-input"
           id="chatInput"
           placeholder="Escribe tu consulta jurídica… (Enter para enviar)"
           rows="1"
+          aria-label="Campo de consulta jurídica"
         ></textarea>
-        <button class="tpl-send" id="sendBtn">➤</button>
+        <button class="tpl-send" id="sendBtn" aria-label="Enviar consulta">➤</button>
       </div>
       <p class="tpl-note">
         Tu Proceso Legal es orientación informativa · No reemplaza a un abogado colegiado ·

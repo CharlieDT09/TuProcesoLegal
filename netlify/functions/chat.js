@@ -70,6 +70,7 @@ El trámite se realiza ante los Juzgados Seccionales de Familia del Órgano Judi
 ⚠️ Esta orientación es informativa. Para su caso específico, consulte a un abogado colegiado en la República de Panamá.`,
 ];
 
+const DEMO_DELAY_MS = 1200;
 let demoIndex = 0;
 
 exports.handler = async function (event) {
@@ -132,7 +133,7 @@ exports.handler = async function (event) {
   }
 
   // ── MODO DEMO — Cuando no hay API key configurada ──
-  await sleep(1200);
+  await sleep(DEMO_DELAY_MS);
   const reply = DEMO_RESPONSES[demoIndex % DEMO_RESPONSES.length];
   demoIndex++;
   return response({ reply });
