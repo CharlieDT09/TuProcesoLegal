@@ -94,7 +94,7 @@ exports.handler = async function (event) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
   // ── MODO PRODUCCIÓN — Se activa automáticamente cuando hay API key ──
-  if (apiKey && apiKey.startsWith('sk-ant-')) {
+  if (apiKey && apiKey.startsWith('sk-ant-') && apiKey.length >= 40) {
     try {
       const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -113,12 +113,11 @@ exports.handler = async function (event) {
 
       if (!anthropicRes.ok) {
         const errBody = await anthropicRes.json().catch(() => ({}));
-        console.error('Anthropic API error:', anthropicRes.status, JSON.stringify(errBody));
         const msg = errBody?.error?.message || `Error ${anthropicRes.status}`;
-        // Mensajes claros según el tipo de error
         if (anthropicRes.status === 401) return response({ error: 'API key inválida. Verifica la variable ANTHROPIC_API_KEY en Netlify.' }, 502);
         if (anthropicRes.status === 429) return response({ error: 'Límite de uso alcanzado o sin créditos. Verifica tu cuenta en console.anthropic.com.' }, 502);
         if (anthropicRes.status === 403) return response({ error: 'Sin acceso. Verifica que tu cuenta tenga créditos activos en console.anthropic.com.' }, 502);
+        if (anthropicRes.status === 500) return response({ error: 'Error interno de Anthropic. Intenta de nuevo en unos momentos.' }, 502);
         return response({ error: `Error de Anthropic (${anthropicRes.status}): ${msg}` }, 502);
       }
 
@@ -128,8 +127,7 @@ exports.handler = async function (event) {
       return response({ reply, usage });
 
     } catch (err) {
-      console.error('Error Anthropic API:', err.message);
-      return response({ error: `Error de conexión: ${err.message}` }, 502);
+      return response({ error: 'Error de conexión con el servidor. Intenta de nuevo.' }, 502);
     }
   }
 
