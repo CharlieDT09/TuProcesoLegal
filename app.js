@@ -40,6 +40,7 @@ function launchChat() {
 }
 
 function goToLanding() {
+  if (activeTypewriterTimer) { clearInterval(activeTypewriterTimer); activeTypewriterTimer = null; }
   history = [];
   clearSavedHistory();
   messagesEl.innerHTML = '';
@@ -70,10 +71,13 @@ const suggestions     = document.querySelectorAll('.tpl-sug-btn');
 // Historial de mensajes para enviar al backend
 let history = [];
 let isLoading = false;
+let activeTypewriterTimer = null;
 
 // ── Límite mensual basado en costo real de la API ─
-const MAX_INPUT_CHARS    = 1000;
-const MONTHLY_BUDGET_USD = 5.00;
+const MAX_INPUT_CHARS     = 1000;
+const MAX_TEXTAREA_HEIGHT = 120;
+const SCROLL_DELAY_MS     = 50;
+const MONTHLY_BUDGET_USD  = 5.00;
 const COST_PER_INPUT_TOKEN  = 3.00  / 1_000_000;
 const COST_PER_OUTPUT_TOKEN = 15.00 / 1_000_000;
 
@@ -147,7 +151,7 @@ suggestions.forEach(btn => {
 // ── Input ────────────────────────────────────────
 chatInput.addEventListener('input', () => {
   chatInput.style.height = 'auto';
-  chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+  chatInput.style.height = Math.min(chatInput.scrollHeight, MAX_TEXTAREA_HEIGHT) + 'px';
   const len = chatInput.value.trim().length;
   sendBtn.classList.toggle('active', len > 0 && len <= MAX_INPUT_CHARS);
   chatInput.classList.toggle('over-limit', len > MAX_INPUT_CHARS);
@@ -164,6 +168,7 @@ sendBtn.addEventListener('click', () => sendMessage(chatInput.value.trim()));
 
 // ── Limpiar chat ──────────────────────────────────
 clearBtn.addEventListener('click', () => {
+  if (activeTypewriterTimer) { clearInterval(activeTypewriterTimer); activeTypewriterTimer = null; }
   history = [];
   clearSavedHistory();
   messagesEl.innerHTML = '';
@@ -274,7 +279,7 @@ function typeMessage(bubble, content) {
   let pos = 0;
 
   return new Promise(resolve => {
-    const timer = setInterval(() => {
+    activeTypewriterTimer = setInterval(() => {
       pos = Math.min(pos + CHARS_PER_TICK, content.length);
       const partial = content.slice(0, pos);
       bubble.innerHTML = DOMPurify.sanitize(marked.parse(partial));
@@ -284,7 +289,8 @@ function typeMessage(bubble, content) {
       }
 
       if (pos >= content.length) {
-        clearInterval(timer);
+        clearInterval(activeTypewriterTimer);
+        activeTypewriterTimer = null;
         resolve();
       }
     }, TICK_MS);
@@ -315,5 +321,5 @@ function hideError() {
 function scrollToBottom() {
   setTimeout(() => {
     document.getElementById('bottom').scrollIntoView({ behavior: 'smooth' });
-  }, 50);
+  }, SCROLL_DELAY_MS);
 }
