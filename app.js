@@ -69,6 +69,29 @@ const suggestions     = document.querySelectorAll('.tpl-sug-btn');
 let history = [];
 let isLoading = false;
 
+// ── Límite mensual basado en costo real de la API ─
+const MAX_INPUT_CHARS    = 1000;
+const MONTHLY_BUDGET_USD = 5.00;
+const COST_PER_INPUT_TOKEN  = 3.00  / 1_000_000;
+const COST_PER_OUTPUT_TOKEN = 15.00 / 1_000_000;
+
+function getBudgetData() {
+  const now = new Date();
+  const key = `tpl_cost_${now.getFullYear()}_${now.getMonth()}`;
+  const spent = parseFloat(localStorage.getItem(key) || '0');
+  return { spent, key };
+}
+
+function hasReachedLimit() {
+  return getBudgetData().spent >= MONTHLY_BUDGET_USD;
+}
+
+function addUsageCost(inputTokens, outputTokens) {
+  const { spent, key } = getBudgetData();
+  const cost = (inputTokens * COST_PER_INPUT_TOKEN) + (outputTokens * COST_PER_OUTPUT_TOKEN);
+  localStorage.setItem(key, (spent + cost).toFixed(6));
+}
+
 // ── Botón regresar ────────────────────────────────
 document.getElementById('backToLanding').addEventListener('click', goToLanding);
 
@@ -81,7 +104,9 @@ suggestions.forEach(btn => {
 chatInput.addEventListener('input', () => {
   chatInput.style.height = 'auto';
   chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
-  sendBtn.classList.toggle('active', chatInput.value.trim().length > 0);
+  const len = chatInput.value.trim().length;
+  sendBtn.classList.toggle('active', len > 0 && len <= MAX_INPUT_CHARS);
+  chatInput.classList.toggle('over-limit', len > MAX_INPUT_CHARS);
 });
 
 chatInput.addEventListener('keydown', (e) => {
@@ -109,6 +134,16 @@ clearBtn.addEventListener('click', () => {
 async function sendMessage(text) {
   if (!text || isLoading) return;
 
+  if (text.length > MAX_INPUT_CHARS) {
+    showError(`Tu mensaje supera los ${MAX_INPUT_CHARS} caracteres permitidos.`);
+    return;
+  }
+
+  if (hasReachedLimit()) {
+    showError('Has alcanzado el límite de 10 consultas gratuitas este mes. El contador se reinicia el próximo mes.');
+    return;
+  }
+
   welcomeScreen.classList.add('hidden');
   clearBtn.classList.remove('hidden');
   hideError();
@@ -132,26 +167,21 @@ async function sendMessage(text) {
     const data = await response.json();
 
     if (!response.ok) {
-      if (data.error === 'limite_alcanzado') {
-        showError('Has alcanzado el límite de 10 consultas gratuitas este mes. Actualiza a Plan Pro para continuar.');
-      } else {
-        showError(data.error || 'Error al procesar tu consulta. Intenta de nuevo.');
-      }
+      showError(data.error || 'Error al procesar tu consulta. Intenta de nuevo.');
       history.pop();
       return;
     }
 
     const reply = data.reply;
-    setLoading(false);
+    if (data.usage) addUsageCost(data.usage.input_tokens, data.usage.output_tokens);
     await addMessage('assistant', reply);
     history.push({ role: 'assistant', content: reply });
 
   } catch (err) {
-    console.error(err);
     showError('Error de conexión. Verifica tu internet e intenta de nuevo.');
     history.pop();
-    setLoading(false);
   } finally {
+    setLoading(false);
     chatInput.disabled = false;
     chatInput.focus();
   }
