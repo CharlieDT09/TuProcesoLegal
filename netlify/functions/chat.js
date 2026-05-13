@@ -21,6 +21,11 @@ REGLAS:
 BASE DE DATOS LEGAL DE REFERENCIA:
 ${LEGAL_DATA}`;
 
+// ── Constantes ────────────────────────────────────
+const DEMO_DELAY_MS     = 1200;
+const MAX_MESSAGE_CHARS = 2000;
+const MAX_HISTORY_MSGS  = 20;
+
 // ── Respuestas demo (sin API key) ─────────────────
 const DEMO_RESPONSES = [
   `Según el Código de Trabajo de Panamá (Ley 44 de 1995), el despido sin causa justificada da derecho al trabajador a:
@@ -70,16 +75,13 @@ El trámite se realiza ante los Juzgados Seccionales de Familia del Órgano Judi
 ⚠️ Esta orientación es informativa. Para su caso específico, consulte a un abogado colegiado en la República de Panamá.`,
 ];
 
-const DEMO_DELAY_MS = 1200;
 let demoIndex = 0;
 
 exports.handler = async function (event) {
-  // Solo aceptar POST
   if (event.httpMethod !== 'POST') {
     return response({ error: 'Método no permitido' }, 405);
   }
 
-  // Parsear body
   let body;
   try {
     body = JSON.parse(event.body || '{}');
@@ -92,9 +94,24 @@ exports.handler = async function (event) {
     return response({ error: 'Sin mensajes' }, 400);
   }
 
+  // Validar estructura y longitud de cada mensaje
+  for (const msg of messages) {
+    if (!msg || typeof msg.role !== 'string' || typeof msg.content !== 'string') {
+      return response({ error: 'Formato de mensaje inválido' }, 400);
+    }
+    if (msg.content.length > MAX_MESSAGE_CHARS) {
+      return response({ error: `El mensaje supera el límite de ${MAX_MESSAGE_CHARS} caracteres.` }, 400);
+    }
+  }
+
+  // Limitar historial para evitar contextos excesivamente largos
+  const trimmedMessages = messages.length > MAX_HISTORY_MSGS
+    ? messages.slice(messages.length - MAX_HISTORY_MSGS)
+    : messages;
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
-  // ── MODO PRODUCCIÓN — Se activa automáticamente cuando hay API key ──
+  // ── MODO PRODUCCIÓN ───────────────────────────────
   if (apiKey && apiKey.startsWith('sk-ant-') && apiKey.length >= 40) {
     try {
       const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
@@ -108,7 +125,7 @@ exports.handler = async function (event) {
           model: 'claude-sonnet-4-6',
           max_tokens: 1024,
           system: SYSTEM_PROMPT,
-          messages: messages,
+          messages: trimmedMessages,
         }),
       });
 
@@ -127,12 +144,12 @@ exports.handler = async function (event) {
       const usage = data.usage || { input_tokens: 0, output_tokens: 0 };
       return response({ reply, usage });
 
-    } catch (err) {
+    } catch {
       return response({ error: 'Error de conexión con el servidor. Intenta de nuevo.' }, 502);
     }
   }
 
-  // ── MODO DEMO — Cuando no hay API key configurada ──
+  // ── MODO DEMO ─────────────────────────────────────
   await sleep(DEMO_DELAY_MS);
   const reply = DEMO_RESPONSES[demoIndex % DEMO_RESPONSES.length];
   demoIndex++;

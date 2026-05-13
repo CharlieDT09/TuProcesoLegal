@@ -6,12 +6,14 @@
   <meta name="description" content="Tu Proceso Legal — Orientación jurídica basada en la legislación vigente de la República de Panamá." />
   <meta name="theme-color" content="#070c18" />
   <title>Tu Proceso Legal</title>
-  <link rel="icon" type="image/png" href="logoTuProcesoLegal2.jpeg" />
+  <link rel="icon" type="image/jpeg" href="logoTuProcesoLegal2.jpeg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500&display=swap" />
   <link rel="stylesheet" href="styles.css" />
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js" defer></script>
+  <script src="app.js" defer></script>
 </head>
 <body>
 
@@ -23,7 +25,9 @@
 
     <!-- ── SECCIÓN HERO ──────────────────────── -->
     <section class="lp-hero">
-      <div class="lp-hero-icon"><img src="logoTuProcesoLegal2.jpeg" alt="Tu Proceso Legal" /></div>
+      <div class="lp-hero-icon">
+        <img src="logoTuProcesoLegal2.jpeg" alt="Tu Proceso Legal" />
+      </div>
       <h1 class="lp-hero-h1">Bienvenido a <span class="accent">TuProcesoIA</span></h1>
       <p class="lp-hero-desc">
         Tu guía inteligente en el mundo del derecho panameño. Resolvemos tus
@@ -32,9 +36,9 @@
       </p>
 
       <div class="lp-features">
-        <div class="lp-feature"><span class="lp-feat-icon">🛡️</span> Información confidencial y privada</div>
-        <div class="lp-feature"><span class="lp-feat-icon">📖</span> Basado en los códigos panameños vigentes</div>
-        <div class="lp-feature"><span class="lp-feat-icon">✨</span> Orientación clara, paso a paso</div>
+        <div class="lp-feature"><span class="lp-feat-icon" aria-hidden="true">🛡️</span> Información confidencial y privada</div>
+        <div class="lp-feature"><span class="lp-feat-icon" aria-hidden="true">📖</span> Basado en los códigos panameños vigentes</div>
+        <div class="lp-feature"><span class="lp-feat-icon" aria-hidden="true">✨</span> Orientación clara, paso a paso</div>
       </div>
 
       <button class="lp-cta" id="startChatHero">Iniciar consulta &rarr;</button>
@@ -44,15 +48,15 @@
         de un abogado colegiado en Panamá.
       </p>
 
-      <a class="lp-scroll-hint" href="#lpInfo" aria-label="Ver más">
-        Descubre más<br><span class="lp-chevron">&#8964;</span>
+      <a class="lp-scroll-hint" href="#lpInfo" aria-label="Ver más información">
+        Descubre más<br><span class="lp-chevron" aria-hidden="true">&#8964;</span>
       </a>
     </section>
 
     <!-- ── SECCIÓN INFO ──────────────────────── -->
     <section class="lp-info" id="lpInfo">
 
-      <div class="lp-badges">
+      <div class="lp-badges" aria-hidden="true">
         <div class="lp-badge"><span>⚖️</span><small>JUSTICIA</small></div>
         <div class="lp-badge"><span>🤖</span><small>INTELIGENCIA ARTIFICIAL</small></div>
         <div class="lp-badge"><span>🔨</span><small>CÓDIGOS LEGALES</small></div>
@@ -63,17 +67,17 @@
 
       <div class="lp-cards">
         <div class="lp-card">
-          <div class="lp-card-icon">💬</div>
+          <div class="lp-card-icon" aria-hidden="true">💬</div>
           <h3>¿Qué puedo consultar?</h3>
           <p>Consulta temas legales como divorcios, herencias, denuncias, derechos laborales, contratos, procesos judiciales y legislación vigente en Panamá.</p>
         </div>
         <div class="lp-card">
-          <div class="lp-card-icon">✨</div>
+          <div class="lp-card-icon" aria-hidden="true">✨</div>
           <h3>¿Cómo funciona?</h3>
           <p>Escribe tu consulta, nuestra IA la analiza con base legal y recibes orientación clara en segundos.</p>
         </div>
         <div class="lp-card">
-          <div class="lp-card-icon">🏛️</div>
+          <div class="lp-card-icon" aria-hidden="true">🏛️</div>
           <h3>¿Quiénes somos?</h3>
           <p>Somos una plataforma legal impulsada por inteligencia artificial, creada para hacer el derecho más accesible, claro y práctico para todos.</p>
         </div>
@@ -84,31 +88,37 @@
 
   </div><!-- /#landing -->
 
-  <!-- ── RAÍZ ─────────────────────────────────── -->
-  <div class="tpl-root" id="appRoot" style="display:none">
+  <!-- ── CHAT ──────────────────────────────────── -->
+  <div class="tpl-root" id="appRoot">
 
     <!-- Fondo decorativo -->
-    <div class="tpl-bg"></div>
+    <div class="tpl-bg" aria-hidden="true"></div>
 
     <!-- ── HEADER ──────────────────────────────── -->
     <header class="tpl-header">
       <div class="tpl-brand">
-        <div class="tpl-logo"><img src="logoTuProcesoLegal2.jpeg" alt="Tu Proceso Legal" /></div>
+        <div class="tpl-logo">
+          <img src="logoTuProcesoLegal2.jpeg" alt="Tu Proceso Legal" />
+        </div>
         <div>
           <div class="tpl-title">Tu Proceso <span class="accent">Legal</span></div>
           <div class="tpl-sub">Asistente Jurídico · República de Panamá</div>
         </div>
       </div>
-      <button class="tpl-back-btn" id="backToLanding">&#8592; Regresar a página principal</button>
-      <div class="tpl-flag">🇵🇦</div>
+      <button class="tpl-back-btn" id="backToLanding" aria-label="Regresar a la página principal">
+        &#8592; Regresar
+      </button>
+      <div class="tpl-flag" aria-hidden="true">🇵🇦</div>
     </header>
 
     <!-- ── CHAT ────────────────────────────────── -->
-    <main class="tpl-main" id="chatMain">
+    <main class="tpl-main" id="chatMain" aria-label="Conversación con el asistente jurídico">
 
       <!-- Pantalla de bienvenida -->
       <div class="tpl-welcome" id="welcomeScreen">
-        <div class="tpl-welcome-icon"><img src="logoTuProcesoLegal2.jpeg" alt="Tu Proceso Legal" /></div>
+        <div class="tpl-welcome-icon">
+          <img src="logoTuProcesoLegal2.jpeg" alt="Tu Proceso Legal" />
+        </div>
         <h1 class="tpl-welcome-h1">Tu Proceso <span class="accent">Legal</span></h1>
         <p class="tpl-welcome-p">
           Orientación jurídica basada en la legislación vigente de Panamá,
@@ -119,8 +129,8 @@
           de un abogado colegiado en la República de Panamá.
         </p>
 
-        <p class="tpl-sug-label">Consultas frecuentes</p>
-        <div class="tpl-suggestions" id="suggestions">
+        <p class="tpl-sug-label" id="suggestionsLabel">Consultas frecuentes</p>
+        <div class="tpl-suggestions" role="group" aria-labelledby="suggestionsLabel">
           <button class="tpl-sug-btn" aria-label="Consultar: derechos al ser despedido sin causa">¿Cuáles son mis derechos si me despiden sin causa justificada?</button>
           <button class="tpl-sug-btn" aria-label="Consultar: proceso de divorcio en Panamá">¿Cómo funciona el proceso de divorcio en Panamá?</button>
           <button class="tpl-sug-btn" aria-label="Consultar: ley sobre contratos de arrendamiento">¿Qué dice la ley sobre los contratos de arrendamiento?</button>
@@ -130,11 +140,13 @@
       </div>
 
       <!-- Mensajes (se insertan aquí) -->
-      <div id="messages"></div>
+      <div id="messages" aria-live="polite" aria-relevant="additions"></div>
 
       <!-- Indicador de carga -->
-      <div class="tpl-row assistant hidden" id="typingIndicator">
-        <div class="tpl-avatar"><img src="logoTuProcesoLegal2.jpeg" alt="Tu Proceso Legal" /></div>
+      <div class="tpl-row assistant hidden" id="typingIndicator" aria-label="El asistente está escribiendo" aria-hidden="true">
+        <div class="tpl-avatar">
+          <img src="logoTuProcesoLegal2.jpeg" alt="Tu Proceso Legal" />
+        </div>
         <div class="tpl-bubble assistant tpl-dots">
           <span></span><span></span><span></span>
         </div>
@@ -144,7 +156,7 @@
       <div class="tpl-error hidden" id="errorBanner" role="alert" aria-live="assertive"></div>
 
       <!-- Ancla de scroll -->
-      <div id="bottom"></div>
+      <div id="bottom" aria-hidden="true"></div>
     </main>
 
     <!-- ── FOOTER / INPUT ───────────────────────── -->
@@ -154,11 +166,18 @@
         <textarea
           class="tpl-input"
           id="chatInput"
-          placeholder="Escribe tu consulta jurídica… (Enter para enviar)"
+          placeholder="Escribe tu consulta jurídica… (Enter para enviar, Shift+Enter para nueva línea)"
           rows="1"
           aria-label="Campo de consulta jurídica"
+          aria-multiline="true"
+          spellcheck="true"
+          autocomplete="off"
         ></textarea>
-        <button class="tpl-send" id="sendBtn" aria-label="Enviar consulta">➤</button>
+        <button class="tpl-send" id="sendBtn" aria-label="Enviar consulta" aria-disabled="true">➤</button>
+      </div>
+      <div class="tpl-input-meta">
+        <span id="charCounter" class="char-counter" aria-live="polite" aria-label="Contador de caracteres">0 / 1000</span>
+        <span id="budgetIndicator" class="budget-indicator" aria-live="polite"></span>
       </div>
       <p class="tpl-note">
         Tu Proceso Legal es orientación informativa · No reemplaza a un abogado colegiado ·
@@ -168,6 +187,5 @@
 
   </div><!-- /.tpl-root -->
 
-  <script src="app.js"></script>
 </body>
 </html>
