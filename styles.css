@@ -352,6 +352,7 @@ html, body {
 .tpl-input::placeholder { color: var(--dim); }
 .tpl-input:focus { border-color: rgba(192, 157, 60, 0.55); }
 .tpl-input:disabled { opacity: 0.5; }
+.tpl-input.over-limit { border-color: rgba(220, 60, 60, 0.7); }
 
 .tpl-send {
   width: 44px;

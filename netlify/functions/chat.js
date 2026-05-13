@@ -124,7 +124,8 @@ exports.handler = async function (event) {
 
       const data = await anthropicRes.json();
       const reply = data.content?.find(b => b.type === 'text')?.text || 'Sin respuesta.';
-      return response({ reply });
+      const usage = data.usage || { input_tokens: 0, output_tokens: 0 };
+      return response({ reply, usage });
 
     } catch (err) {
       console.error('Error Anthropic API:', err.message);
