@@ -36,10 +36,12 @@ function launchChat() {
     landing.classList.remove('lp-exit');
   }, { once: true });
   appRoot.style.display = '';
+  restoreHistory();
 }
 
 function goToLanding() {
   history = [];
+  clearSavedHistory();
   messagesEl.innerHTML = '';
   welcomeScreen.classList.remove('hidden');
   clearBtn.classList.add('hidden');
@@ -92,6 +94,48 @@ function addUsageCost(inputTokens, outputTokens) {
   localStorage.setItem(key, (spent + cost).toFixed(6));
 }
 
+// ── Persistencia del historial ────────────────────
+function saveHistory() {
+  localStorage.setItem('tpl_history', JSON.stringify(history));
+}
+
+function clearSavedHistory() {
+  localStorage.removeItem('tpl_history');
+}
+
+function restoreHistory() {
+  try {
+    const saved = localStorage.getItem('tpl_history');
+    if (!saved) return;
+    const parsed = JSON.parse(saved);
+    if (!Array.isArray(parsed) || parsed.length === 0) return;
+    history = parsed;
+    history.forEach(msg => renderSavedMessage(msg.role, msg.content));
+    welcomeScreen.classList.add('hidden');
+    clearBtn.classList.remove('hidden');
+    scrollToBottom();
+  } catch {
+    clearSavedHistory();
+  }
+}
+
+function renderSavedMessage(role, content) {
+  const row = document.createElement('div');
+  row.className = `tpl-row ${role}`;
+  if (role === 'assistant') {
+    const avatar = document.createElement('div');
+    avatar.className = 'tpl-avatar';
+    avatar.textContent = '⚖️';
+    row.appendChild(avatar);
+  }
+  const bubble = document.createElement('div');
+  bubble.className = `tpl-bubble ${role}`;
+  bubble[role === 'assistant' ? 'innerHTML' : 'textContent'] =
+    role === 'assistant' ? DOMPurify.sanitize(marked.parse(content)) : content;
+  row.appendChild(bubble);
+  messagesEl.appendChild(row);
+}
+
 // ── Botón regresar ────────────────────────────────
 document.getElementById('backToLanding').addEventListener('click', goToLanding);
 
@@ -121,6 +165,7 @@ sendBtn.addEventListener('click', () => sendMessage(chatInput.value.trim()));
 // ── Limpiar chat ──────────────────────────────────
 clearBtn.addEventListener('click', () => {
   history = [];
+  clearSavedHistory();
   messagesEl.innerHTML = '';
   welcomeScreen.classList.remove('hidden');
   clearBtn.classList.add('hidden');
@@ -164,7 +209,12 @@ async function sendMessage(text) {
       body: JSON.stringify({ messages: history }),
     });
 
-    const data = await response.json();
+    const data = await response.json().catch(() => null);
+    if (!data) {
+      showError('Respuesta inesperada del servidor. Intenta de nuevo.');
+      history.pop();
+      return;
+    }
 
     if (!response.ok) {
       showError(data.error || 'Error al procesar tu consulta. Intenta de nuevo.');
@@ -176,6 +226,7 @@ async function sendMessage(text) {
     if (data.usage) addUsageCost(data.usage.input_tokens, data.usage.output_tokens);
     await addMessage('assistant', reply);
     history.push({ role: 'assistant', content: reply });
+    saveHistory();
 
   } catch (err) {
     showError('Error de conexión. Verifica tu internet e intenta de nuevo.');
