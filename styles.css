@@ -20,7 +20,7 @@
   --user-bg:     rgba(20, 50, 85, 0.85);
   --user-border: rgba(60, 110, 160, 0.4);
   --r:           14px;
-  --serif:       'Playfair Display', Georgia, serif;
+  --serif:       'Raleway', system-ui, sans-serif;
   --sans:        'Inter', system-ui, sans-serif;
 }
 
@@ -644,7 +644,12 @@ html, body {
   text-align: center;
 }
 
-.lp-feat-icon { font-size: 20px; flex-shrink: 0; }
+.lp-feat-icon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
 
 .lp-cta {
   background: linear-gradient(135deg, var(--gold), var(--gold-l));

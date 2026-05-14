@@ -9,7 +9,7 @@
   <link rel="icon" type="image/jpeg" href="logoTuProcesoLegal2.jpeg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Raleway:wght@600;700;800&family=Inter:wght@400;500&display=swap" />
   <link rel="stylesheet" href="styles.css" />
   <!-- CSS crítico: evita flash de contenido sin estilo antes de que cargue styles.css -->
   <style>
@@ -32,7 +32,7 @@
 
     <!-- ── NAV BAR ───────────────────────────────── -->
     <nav class="lp-nav" aria-label="Navegación principal">
-      <div class="lp-nav-brand">
+      <div class="lp-nav-brand" id="lpNavBrand" role="button" tabindex="0" aria-label="Ir a la página principal" style="cursor:pointer;">
         <img src="logoTuProcesoLegal2.jpeg" alt="" aria-hidden="true" />
         <span>Tu Proceso Legal</span>
       </div>
@@ -54,9 +54,9 @@
       </p>
 
       <div class="lp-features">
-        <div class="lp-feature"><span class="lp-feat-icon" aria-hidden="true">🛡️</span> Información confidencial y privada</div>
-        <div class="lp-feature"><span class="lp-feat-icon" aria-hidden="true">📖</span> Basado en los códigos panameños vigentes</div>
-        <div class="lp-feature"><span class="lp-feat-icon" aria-hidden="true">✨</span> Orientación clara, paso a paso</div>
+        <div class="lp-feature"><img class="lp-feat-icon" src="informacionconfidencialyprivada.jpg" alt="" aria-hidden="true" /> Información confidencial y privada</div>
+        <div class="lp-feature"><img class="lp-feat-icon" src="basadoencodigospanamenosvigentes.jpg" alt="" aria-hidden="true" /> Basado en los códigos panameños vigentes</div>
+        <div class="lp-feature"><img class="lp-feat-icon" src="orientacionclarapasoapaso.jpeg" alt="" aria-hidden="true" /> Orientación clara, paso a paso</div>
       </div>
 
       <button class="lp-cta" id="startChatHero">Iniciar consulta &rarr;</button>
@@ -114,7 +114,7 @@
 
     <!-- ── HEADER ──────────────────────────────── -->
     <header class="tpl-header">
-      <div class="tpl-brand">
+      <div class="tpl-brand" id="tplBrand" role="button" tabindex="0" aria-label="Ir a la página principal" style="cursor:pointer;">
         <div class="tpl-logo">
           <img src="logoTuProcesoLegal2.jpeg" alt="Tu Proceso Legal" />
         </div>
