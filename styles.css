@@ -1244,10 +1244,160 @@ html, body {
   line-height: 1.6;
 }
 
+/* ══ Landing Nav Bar ══════════════════════════════ */
+.lp-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px;
+  background: rgba(7, 12, 24, 0.82);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(192, 157, 60, 0.12);
+}
+
+.lp-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.lp-nav-brand img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  mix-blend-mode: screen;
+  border-radius: 6px;
+}
+
+.lp-nav-auth {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  border: 1px solid rgba(192, 157, 60, 0.45);
+  border-radius: 22px;
+  padding: 8px 18px;
+  color: var(--gold);
+  font-size: 13px;
+  font-family: var(--sans);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, transform 0.15s;
+  white-space: nowrap;
+}
+
+.lp-nav-auth:hover {
+  background: var(--gold-dim);
+  border-color: rgba(192, 157, 60, 0.7);
+  transform: translateY(-1px);
+}
+
+/* Compensar el nav fijo para que el hero no quede tapado */
+.lp-hero { padding-top: 100px; }
+
+/* ══ Google OAuth button ══════════════════════════ */
+.auth-google {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 11px 16px;
+  color: #1f1f1f;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--sans);
+  cursor: pointer;
+  transition: opacity 0.18s, transform 0.15s, box-shadow 0.18s;
+  margin-bottom: 4px;
+}
+
+.auth-google:hover {
+  opacity: 0.93;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+}
+
+.auth-google:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Divisor "o" ─────────────────────────────── */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 14px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.auth-divider span {
+  font-size: 12px;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ══ Botón "Continuar sin cuenta" ════════════════ */
+.auth-skip-row {
+  margin-top: 20px;
+  text-align: center;
+  padding-top: 16px;
+  border-top: 1px solid rgba(192, 157, 60, 0.12);
+}
+
+.auth-skip {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-family: var(--sans);
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: color 0.18s, background 0.18s;
+}
+
+.auth-skip:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.auth-skip-note {
+  font-size: 11px;
+  color: var(--dim);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
 /* Mobile ajustes para las nuevas secciones */
 @media (max-width: 600px) {
   .tpl-user-name  { display: none; }
   .tpl-auth-btn   { font-size: 12px; padding: 6px 12px; }
   .auth-modal     { padding: 28px 20px; }
   .history-drawer { width: 280px; }
+  .lp-nav         { padding: 12px 16px; }
+  .lp-nav-brand span { display: none; }
+  .lp-hero        { padding-top: 90px; }
 }
