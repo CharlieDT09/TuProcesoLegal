@@ -20,7 +20,7 @@
   --user-bg:     rgba(20, 50, 85, 0.85);
   --user-border: rgba(60, 110, 160, 0.4);
   --r:           14px;
-  --serif:       'Raleway', system-ui, sans-serif;
+  --serif:       'Inter', system-ui, sans-serif;
   --sans:        'Inter', system-ui, sans-serif;
 }
 
@@ -625,30 +625,32 @@ html, body {
   justify-content: center;
   gap: 14px;
   margin-bottom: 44px;
-  max-width: 700px;
+  max-width: 780px;
 }
 
 .lp-feature {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 14px 20px;
+  padding: 20px 16px 16px;
   font-size: 14px;
   color: var(--text);
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  flex: 1 1 180px;
-  max-width: 220px;
-  justify-content: center;
+  gap: 12px;
+  flex: 1 1 200px;
+  max-width: 240px;
   text-align: center;
+  line-height: 1.45;
 }
 
 .lp-feat-icon {
-  width: 28px;
-  height: 28px;
+  width: 56px;
+  height: 56px;
   flex-shrink: 0;
   object-fit: contain;
+  mix-blend-mode: screen;
 }
 
 .lp-cta {
