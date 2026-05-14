@@ -647,14 +647,12 @@ html, body {
 
 .lp-feat-icon {
   display: block;
-  width: 48px;
-  height: 48px;
+  width: 64px;
+  height: 64px;
   flex-shrink: 0;
   object-fit: cover;
-  object-position: center center;
+  object-position: center;
   border-radius: 50%;
-  mix-blend-mode: screen;
-  overflow: hidden;
 }
 
 .lp-cta {
