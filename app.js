@@ -4,8 +4,6 @@
 
 // ── Supabase ──────────────────────────────────────
 const SUPABASE_URL = 'https://ufnkedficjjvbgsfazka.supabase.co';
-// Clave pública (anon/publishable) — segura para exponer en el navegador.
-// RLS en Supabase protege los datos en el servidor.
 const SUPABASE_KEY = 'sb_publishable_0hGkSJYwZlcV-2O-SGUvlA_Wvv3XBoE';
 
 let _supabase = null;
@@ -39,11 +37,24 @@ const appRoot  = document.getElementById('appRoot');
     bg.appendChild(el);
   });
 
-  document.getElementById('startChatHero').addEventListener('click', launchChat);
-  document.getElementById('startChatInfo').addEventListener('click', launchChat);
+  document.getElementById('startChatHero').addEventListener('click', onStartChatClick);
+  document.getElementById('startChatInfo').addEventListener('click', onStartChatClick);
+
+  // Botón 👤 en el nav de la landing
+  document.getElementById('lpAuthBtn').addEventListener('click', () => openAuthModal('login'));
 })();
 
-function launchChat() {
+// Cuando el usuario pulsa "Iniciar consulta": si no está logueado mostrar el modal
+// con la opción "Continuar sin cuenta". Si ya está logueado, ir directo al chat.
+function onStartChatClick() {
+  if (currentUser) {
+    doLaunchChat();
+  } else {
+    openAuthModal('login', { showSkip: true });
+  }
+}
+
+function doLaunchChat() {
   landing.classList.add('lp-exit');
   landing.addEventListener('animationend', () => {
     landing.style.display = 'none';
@@ -84,6 +95,7 @@ const tabLogin        = document.getElementById('tabLogin');
 const tabRegister     = document.getElementById('tabRegister');
 const panelLogin      = document.getElementById('panelLogin');
 const panelRegister   = document.getElementById('panelRegister');
+const googleAuthBtn   = document.getElementById('googleAuthBtn');
 const loginEmail      = document.getElementById('loginEmail');
 const loginPassword   = document.getElementById('loginPassword');
 const loginMessage    = document.getElementById('loginMessage');
@@ -95,6 +107,8 @@ const regPassword     = document.getElementById('regPassword');
 const regConfirm      = document.getElementById('regConfirm');
 const registerMessage = document.getElementById('registerMessage');
 const registerSubmit  = document.getElementById('registerSubmit');
+const authSkipRow     = document.getElementById('authSkipRow');
+const authSkipBtn     = document.getElementById('authSkipBtn');
 const userMenu        = document.getElementById('userMenu');
 const userBtn         = document.getElementById('userBtn');
 const userDropdown    = document.getElementById('userDropdown');
@@ -132,10 +146,17 @@ async function initAuth() {
   const sb = getSupabase();
   if (!sb) return;
 
+  // Si el usuario regresa de un redirect de OAuth, lanzar el chat automáticamente
   const { data: { session } } = await sb.auth.getSession();
+  const afterLogin = sessionStorage.getItem('tpl_after_login');
+
   if (session?.user) {
     currentUser = session.user;
     updateAuthUI();
+    if (afterLogin === 'launch_chat') {
+      sessionStorage.removeItem('tpl_after_login');
+      doLaunchChat();
+    }
   }
 
   sb.auth.onAuthStateChange((_event, session) => {
@@ -148,7 +169,10 @@ function updateAuthUI() {
   if (currentUser) {
     authBtn.classList.add('hidden');
     userMenu.classList.remove('hidden');
-    const rawName = currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'Usuario';
+    const rawName = currentUser.user_metadata?.full_name
+      || currentUser.user_metadata?.name
+      || currentUser.email?.split('@')[0]
+      || 'Usuario';
     userNameEl.textContent = rawName.split(' ')[0];
     userAvatarEl.textContent = rawName.charAt(0).toUpperCase();
   } else {
@@ -158,19 +182,19 @@ function updateAuthUI() {
 }
 
 // ── Modal helpers ─────────────────────────────────
-function openAuthModal(tab = 'login') {
+function openAuthModal(tab = 'login', { showSkip = false } = {}) {
   authOverlay.classList.remove('hidden');
   clearAuthMessages();
+  authSkipRow.classList.toggle('hidden', !showSkip);
   if (tab === 'register') switchToRegister();
   else switchToLogin();
-  setTimeout(() => {
-    (tab === 'register' ? regName : loginEmail).focus();
-  }, 60);
+  setTimeout(() => (tab === 'register' ? regName : loginEmail).focus(), 60);
 }
 
 function closeAuthModal() {
   authOverlay.classList.add('hidden');
   clearAuthMessages();
+  authSkipRow.classList.add('hidden');
 }
 
 function switchToLogin() {
@@ -205,6 +229,38 @@ function showAuthMessage(el, text, type = 'error') {
   el.classList.remove('hidden');
 }
 
+// ── Google OAuth ──────────────────────────────────
+async function handleGoogleLogin() {
+  const sb = getSupabase();
+  if (!sb) return;
+
+  googleAuthBtn.disabled = true;
+  googleAuthBtn.textContent = 'Conectando con Google…';
+
+  // Guardamos la intención para redirigir al chat después del OAuth
+  sessionStorage.setItem('tpl_after_login', 'launch_chat');
+
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin + '/',
+    },
+  });
+
+  if (error) {
+    googleAuthBtn.disabled = false;
+    googleAuthBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+    </svg> Continuar con Google`;
+    sessionStorage.removeItem('tpl_after_login');
+    showAuthMessage(loginMessage, 'Error al conectar con Google. Intenta de nuevo.');
+  }
+  // Si no hay error, el navegador redirige → no necesitamos hacer nada más aquí
+}
+
 // ── Login ─────────────────────────────────────────
 async function handleLogin() {
   clearAuthMessages();
@@ -233,9 +289,12 @@ async function handleLogin() {
     return;
   }
 
+  const wasSkippable = !authSkipRow.classList.contains('hidden');
   closeAuthModal();
   loginEmail.value = '';
   loginPassword.value = '';
+
+  if (wasSkippable) doLaunchChat();
 }
 
 // ── Registro ──────────────────────────────────────
@@ -284,11 +343,10 @@ async function handleRegister() {
     body: JSON.stringify({ email, name }),
   }).catch(() => {});
 
-  // Si Supabase requiere confirmación por email
   if (!data.session) {
     showAuthMessage(
       registerMessage,
-      `¡Cuenta creada! Revisa tu bandeja de entrada en ${email} para confirmar tu cuenta.`,
+      `¡Cuenta creada! Revisa tu bandeja en ${email} para confirmar tu cuenta.`,
       'success'
     );
     registerSubmit.textContent = '✓ Revisa tu correo';
@@ -299,7 +357,9 @@ async function handleRegister() {
     return;
   }
 
+  const wasSkippable = !authSkipRow.classList.contains('hidden');
   closeAuthModal();
+  if (wasSkippable) doLaunchChat();
 }
 
 // ── Recuperar contraseña ──────────────────────────
@@ -334,9 +394,7 @@ async function handleSignOut() {
 
 // ── Dropdown de usuario ───────────────────────────
 function toggleUserDropdown() {
-  const isOpen = !userDropdown.classList.contains('hidden');
-  if (isOpen) closeUserDropdown();
-  else openUserDropdown();
+  userDropdown.classList.contains('hidden') ? openUserDropdown() : closeUserDropdown();
 }
 
 function openUserDropdown() {
@@ -348,6 +406,57 @@ function closeUserDropdown() {
   userDropdown.classList.add('hidden');
   userBtn.setAttribute('aria-expanded', 'false');
 }
+
+// ── Listeners de auth ─────────────────────────────
+authBtn.addEventListener('click', () => openAuthModal('login'));
+authClose.addEventListener('click', closeAuthModal);
+authOverlay.addEventListener('click', e => { if (e.target === authOverlay) closeAuthModal(); });
+
+tabLogin.addEventListener('click', switchToLogin);
+tabRegister.addEventListener('click', switchToRegister);
+
+googleAuthBtn.addEventListener('click', handleGoogleLogin);
+
+loginSubmit.addEventListener('click', handleLogin);
+loginEmail.addEventListener('keydown',   e => { if (e.key === 'Enter') loginPassword.focus(); });
+loginPassword.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+forgotBtn.addEventListener('click', handleForgotPassword);
+
+registerSubmit.addEventListener('click', handleRegister);
+regName.addEventListener('keydown',     e => { if (e.key === 'Enter') regEmail.focus(); });
+regEmail.addEventListener('keydown',    e => { if (e.key === 'Enter') regPassword.focus(); });
+regPassword.addEventListener('keydown', e => { if (e.key === 'Enter') regConfirm.focus(); });
+regConfirm.addEventListener('keydown',  e => { if (e.key === 'Enter') handleRegister(); });
+
+// "Continuar sin cuenta"
+authSkipBtn.addEventListener('click', () => {
+  closeAuthModal();
+  doLaunchChat();
+});
+
+userBtn.addEventListener('click', toggleUserDropdown);
+document.addEventListener('click', e => {
+  if (userMenu && !userMenu.contains(e.target)) closeUserDropdown();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeAuthModal();
+    closeHistoryDrawer();
+    closeUserDropdown();
+  }
+});
+
+myChatsBtn.addEventListener('click', openHistoryDrawer);
+signOutBtn.addEventListener('click', handleSignOut);
+historyClose.addEventListener('click', closeHistoryDrawer);
+historyBackdrop.addEventListener('click', closeHistoryDrawer);
+historyNewChat.addEventListener('click', () => {
+  closeHistoryDrawer();
+  resetChat();
+});
+
+// ── Init al cargar ────────────────────────────────
+initAuth();
 
 // ══ HISTORIAL DE CONVERSACIONES ═══════════════════
 
@@ -409,56 +518,46 @@ async function openConversation(conversationId) {
 async function loadConversations() {
   const sb = getSupabase();
   if (!sb || !currentUser) return [];
-
   const { data } = await sb
     .from('conversations')
     .select('id, title, updated_at')
     .order('updated_at', { ascending: false })
     .limit(50);
-
   return data || [];
 }
 
 async function loadConversationMessages(conversationId) {
   const sb = getSupabase();
   if (!sb) return [];
-
   const { data } = await sb
     .from('messages')
     .select('role, content')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: true });
-
   return data || [];
 }
 
 async function createConversation(firstUserMessage) {
   const sb = getSupabase();
   if (!sb || !currentUser) return null;
-
   const title = firstUserMessage.length > 60
     ? firstUserMessage.slice(0, 60) + '…'
     : firstUserMessage;
-
   const { data, error } = await sb
     .from('conversations')
     .insert({ user_id: currentUser.id, title })
     .select('id')
     .single();
-
   return error ? null : data.id;
 }
 
 async function saveMessagePair(userText, assistantText) {
   const sb = getSupabase();
   if (!sb || !currentUser || !currentConversationId) return;
-
   await sb.from('messages').insert([
     { conversation_id: currentConversationId, role: 'user',      content: userText },
     { conversation_id: currentConversationId, role: 'assistant', content: assistantText },
   ]);
-
-  // Actualizar timestamp de la conversación
   sb.from('conversations')
     .update({ updated_at: new Date().toISOString() })
     .eq('id', currentConversationId);
@@ -473,63 +572,18 @@ function escapeHtml(text) {
 
 function formatRelativeDate(isoString) {
   const date = new Date(isoString);
-  const diff = Date.now() - date.getTime();
-  const days = Math.floor(diff / 86_400_000);
+  const days = Math.floor((Date.now() - date.getTime()) / 86_400_000);
   if (days === 0) return 'Hoy';
   if (days === 1) return 'Ayer';
   if (days < 7)  return `Hace ${days} días`;
   return date.toLocaleDateString('es-PA', { month: 'short', day: 'numeric' });
 }
 
-// ── Listeners de auth ─────────────────────────────
-authBtn.addEventListener('click', () => openAuthModal('login'));
-authClose.addEventListener('click', closeAuthModal);
-authOverlay.addEventListener('click', e => { if (e.target === authOverlay) closeAuthModal(); });
-
-tabLogin.addEventListener('click', switchToLogin);
-tabRegister.addEventListener('click', switchToRegister);
-
-loginSubmit.addEventListener('click', handleLogin);
-loginEmail.addEventListener('keydown', e => { if (e.key === 'Enter') loginPassword.focus(); });
-loginPassword.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
-forgotBtn.addEventListener('click', handleForgotPassword);
-
-registerSubmit.addEventListener('click', handleRegister);
-regName.addEventListener('keydown',     e => { if (e.key === 'Enter') regEmail.focus(); });
-regEmail.addEventListener('keydown',    e => { if (e.key === 'Enter') regPassword.focus(); });
-regPassword.addEventListener('keydown', e => { if (e.key === 'Enter') regConfirm.focus(); });
-regConfirm.addEventListener('keydown',  e => { if (e.key === 'Enter') handleRegister(); });
-
-userBtn.addEventListener('click', toggleUserDropdown);
-document.addEventListener('click', e => {
-  if (userMenu && !userMenu.contains(e.target)) closeUserDropdown();
-});
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    closeAuthModal();
-    closeHistoryDrawer();
-    closeUserDropdown();
-  }
-});
-
-myChatsBtn.addEventListener('click', openHistoryDrawer);
-signOutBtn.addEventListener('click', handleSignOut);
-historyClose.addEventListener('click', closeHistoryDrawer);
-historyBackdrop.addEventListener('click', closeHistoryDrawer);
-historyNewChat.addEventListener('click', () => {
-  closeHistoryDrawer();
-  resetChat();
-});
-
-// ── Init Supabase al cargar ───────────────────────
-initAuth();
-
 // ══ PRESUPUESTO ═══════════════════════════════════
 function getBudgetData() {
   const now = new Date();
   const key = `tpl_cost_${now.getFullYear()}_${now.getMonth()}`;
-  const spent = parseFloat(localStorage.getItem(key) || '0');
-  return { spent, key };
+  return { spent: parseFloat(localStorage.getItem(key) || '0'), key };
 }
 
 function hasReachedLimit() {
@@ -551,7 +605,7 @@ function updateBudgetIndicator() {
 
 // ══ PERSISTENCIA LOCAL (modo anónimo) ═════════════
 function saveHistory() {
-  if (currentUser) return; // Usuarios autenticados usan Supabase
+  if (currentUser) return;
   localStorage.setItem('tpl_history', JSON.stringify(history));
 }
 
@@ -560,7 +614,7 @@ function clearSavedHistory() {
 }
 
 function restoreHistory() {
-  if (currentUser) return; // Historial viene de Supabase
+  if (currentUser) return;
   try {
     const saved = localStorage.getItem('tpl_history');
     if (!saved) return;
@@ -585,11 +639,8 @@ function renderSavedMessage(role, content) {
   if (role === 'assistant') row.appendChild(createAvatar());
   const bubble = document.createElement('div');
   bubble.className = `tpl-bubble ${role}`;
-  if (role === 'assistant') {
-    bubble.innerHTML = DOMPurify.sanitize(marked.parse(content));
-  } else {
-    bubble.textContent = content;
-  }
+  bubble[role === 'assistant' ? 'innerHTML' : 'textContent'] =
+    role === 'assistant' ? DOMPurify.sanitize(marked.parse(content)) : content;
   row.appendChild(bubble);
   messagesEl.appendChild(row);
 }
@@ -611,7 +662,7 @@ function resetChat() {
   updateCharCounter(0);
 }
 
-// ── Listeners ─────────────────────────────────────
+// ── Listeners del chat ────────────────────────────
 document.getElementById('backToLanding').addEventListener('click', goToLanding);
 clearBtn.addEventListener('click', resetChat);
 
@@ -703,7 +754,6 @@ async function sendMessage(text) {
     history.push({ role: 'assistant', content: reply });
 
     if (currentUser) {
-      // Crear conversación en Supabase si es el primer mensaje
       if (!currentConversationId) {
         currentConversationId = await createConversation(text);
       }
