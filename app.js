@@ -42,6 +42,11 @@ const appRoot  = document.getElementById('appRoot');
 
   // Botón 👤 en el nav de la landing
   document.getElementById('lpAuthBtn').addEventListener('click', () => openAuthModal('login'));
+
+  // Logo del nav de la landing → scroll al tope
+  const lpNavBrand = document.getElementById('lpNavBrand');
+  lpNavBrand.addEventListener('click', () => landing.scrollTo({ top: 0, behavior: 'smooth' }));
+  lpNavBrand.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') lpNavBrand.click(); });
 })();
 
 // Cuando el usuario pulsa "Iniciar consulta": si no está logueado mostrar el modal
@@ -74,6 +79,13 @@ function goToLanding() {
   appRoot.classList.remove('active');
   landing.style.display = '';
 }
+
+// Logo del chat header → volver a landing
+(function initBrandClick() {
+  const tplBrand = document.getElementById('tplBrand');
+  tplBrand.addEventListener('click', goToLanding);
+  tplBrand.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') goToLanding(); });
+})();
 
 // ── Referencias DOM ───────────────────────────────
 const messagesEl        = document.getElementById('messages');
