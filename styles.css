@@ -20,7 +20,7 @@
   --user-bg:     rgba(20, 50, 85, 0.85);
   --user-border: rgba(60, 110, 160, 0.4);
   --r:           14px;
-  --serif:       'Inter', system-ui, sans-serif;
+  --serif:       'Bodoni Moda', Didot, Georgia, serif;
   --sans:        'Inter', system-ui, sans-serif;
 }
 
@@ -646,10 +646,12 @@ html, body {
 }
 
 .lp-feat-icon {
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
   flex-shrink: 0;
-  object-fit: contain;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 50%;
   mix-blend-mode: screen;
 }
 
