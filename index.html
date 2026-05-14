@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500&display=swap" />
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js" defer></script>
   <script src="app.js" defer></script>
@@ -105,9 +106,32 @@
           <div class="tpl-sub">Asistente Jurídico · República de Panamá</div>
         </div>
       </div>
-      <button class="tpl-back-btn" id="backToLanding" aria-label="Regresar a la página principal">
-        &#8592; Regresar
-      </button>
+
+      <!-- Grupo de acciones del header -->
+      <div class="tpl-header-actions">
+        <button class="tpl-back-btn" id="backToLanding" aria-label="Regresar a la página principal">
+          &#8592; Regresar
+        </button>
+
+        <!-- Botón de inicio de sesión (visible si NO autenticado) -->
+        <button class="tpl-auth-btn" id="authBtn" aria-label="Iniciar sesión o crear cuenta">
+          Iniciar sesión
+        </button>
+
+        <!-- Menú de usuario (visible si autenticado) -->
+        <div class="tpl-user-menu hidden" id="userMenu">
+          <button class="tpl-user-btn" id="userBtn" aria-expanded="false" aria-haspopup="true">
+            <span class="tpl-user-avatar" id="userAvatar" aria-hidden="true">?</span>
+            <span class="tpl-user-name" id="userName">Usuario</span>
+            <span class="tpl-user-chevron" aria-hidden="true">▾</span>
+          </button>
+          <div class="tpl-user-dropdown hidden" id="userDropdown" role="menu">
+            <button class="tpl-dropdown-item" id="myChatsBtn" role="menuitem">📋 Mis Consultas</button>
+            <button class="tpl-dropdown-item danger" id="signOutBtn" role="menuitem">🚪 Cerrar Sesión</button>
+          </div>
+        </div>
+      </div>
+
       <div class="tpl-flag" aria-hidden="true">🇵🇦</div>
     </header>
 
@@ -186,6 +210,87 @@
     </footer>
 
   </div><!-- /.tpl-root -->
+
+  <!-- ══ MODAL DE AUTENTICACIÓN ═══════════════════ -->
+  <div class="auth-overlay hidden" id="authOverlay" role="dialog" aria-modal="true" aria-label="Autenticación">
+    <div class="auth-modal">
+      <button class="auth-close" id="authClose" aria-label="Cerrar modal de autenticación">✕</button>
+
+      <div class="auth-logo">
+        <img src="logoTuProcesoLegal2.jpeg" alt="Tu Proceso Legal" />
+      </div>
+      <h2 class="auth-title">Tu Proceso <span class="accent">Legal</span></h2>
+
+      <!-- Tabs -->
+      <div class="auth-tabs" role="tablist">
+        <button class="auth-tab active" id="tabLogin" role="tab" aria-selected="true" aria-controls="panelLogin">
+          Iniciar Sesión
+        </button>
+        <button class="auth-tab" id="tabRegister" role="tab" aria-selected="false" aria-controls="panelRegister">
+          Registrarse
+        </button>
+      </div>
+
+      <!-- Panel: Iniciar Sesión -->
+      <div class="auth-panel" id="panelLogin" role="tabpanel" aria-labelledby="tabLogin">
+        <div class="auth-field">
+          <label for="loginEmail">Correo electrónico</label>
+          <input type="email" id="loginEmail" placeholder="tu@correo.com" autocomplete="email" />
+        </div>
+        <div class="auth-field">
+          <label for="loginPassword">Contraseña</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" />
+        </div>
+        <div class="auth-message hidden" id="loginMessage" role="alert"></div>
+        <button class="auth-submit" id="loginSubmit">Entrar</button>
+        <p class="auth-forgot">
+          <button class="auth-link" id="forgotBtn" type="button">¿Olvidaste tu contraseña?</button>
+        </p>
+      </div>
+
+      <!-- Panel: Registrarse -->
+      <div class="auth-panel hidden" id="panelRegister" role="tabpanel" aria-labelledby="tabRegister">
+        <div class="auth-field">
+          <label for="regName">Nombre completo</label>
+          <input type="text" id="regName" placeholder="Tu nombre" autocomplete="name" />
+        </div>
+        <div class="auth-field">
+          <label for="regEmail">Correo electrónico</label>
+          <input type="email" id="regEmail" placeholder="tu@correo.com" autocomplete="email" />
+        </div>
+        <div class="auth-field">
+          <label for="regPassword">Contraseña</label>
+          <input type="password" id="regPassword" placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
+        </div>
+        <div class="auth-field">
+          <label for="regConfirm">Confirmar contraseña</label>
+          <input type="password" id="regConfirm" placeholder="Repite tu contraseña" autocomplete="new-password" />
+        </div>
+        <div class="auth-message hidden" id="registerMessage" role="alert"></div>
+        <button class="auth-submit" id="registerSubmit">Crear cuenta</button>
+        <p class="auth-terms">
+          Al registrarte aceptas nuestra <a href="#" class="auth-link">Política de Privacidad</a>
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ CAJÓN DE HISTORIAL DE CONSULTAS ══════════ -->
+  <div class="history-overlay hidden" id="historyOverlay" role="dialog" aria-modal="true" aria-label="Mis consultas guardadas">
+    <div class="history-drawer">
+      <div class="history-header">
+        <h3>Mis Consultas</h3>
+        <button class="history-close" id="historyClose" aria-label="Cerrar panel de historial">✕</button>
+      </div>
+      <button class="history-new" id="historyNewChat">+ Nueva consulta</button>
+      <div class="history-list" id="historyList" role="list" aria-label="Consultas guardadas">
+        <!-- Items se insertan dinámicamente -->
+      </div>
+    </div>
+    <!-- Click fuera cierra el cajón -->
+    <div class="history-backdrop" id="historyBackdrop" aria-hidden="true"></div>
+  </div>
 
 </body>
 </html>
