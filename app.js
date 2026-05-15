@@ -563,17 +563,70 @@ async function createConversation(firstUserMessage) {
   return error ? null : data.id;
 }
 
-async function saveMessagePair(userText, assistantText) {
+async function saveMessagePair(userText, assistantText, usage = {}) {
   const sb = getSupabase();
   if (!sb || !currentUser || !currentConversationId) return;
   await sb.from('messages').insert([
-    { conversation_id: currentConversationId, role: 'user',      content: userText },
-    { conversation_id: currentConversationId, role: 'assistant', content: assistantText },
+    {
+      conversation_id: currentConversationId,
+      role:            'user',
+      content:         userText,
+      input_tokens:    usage.input_tokens  || 0,
+      output_tokens:   0,
+    },
+    {
+      conversation_id: currentConversationId,
+      role:            'assistant',
+      content:         assistantText,
+      input_tokens:    0,
+      output_tokens:   usage.output_tokens || 0,
+    },
   ]);
   sb.from('conversations')
     .update({ updated_at: new Date().toISOString() })
     .eq('id', currentConversationId);
 }
+
+// Save an anonymous session ID for quiz analytics.
+function getSessionId() {
+  let id = sessionStorage.getItem('tpl_session');
+  if (!id) {
+    id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+    sessionStorage.setItem('tpl_session', id);
+  }
+  return id;
+}
+
+// Save quiz result to Supabase (called from quiz.js via window.saveQuizResult).
+async function saveQuizResult(branch1, branch2, branch3, scores) {
+  const sb = getSupabase();
+  if (!sb) return;
+  await sb.from('quiz_results').insert({
+    user_id:    currentUser?.id  || null,
+    session_id: currentUser      ? null : getSessionId(),
+    branch_1:   branch1,
+    branch_2:   branch2 || null,
+    branch_3:   branch3 || null,
+    scores:     scores,
+  });
+}
+
+// Log a query to analytics (best-effort, non-blocking).
+function logAnalytics(queryText, usage = {}) {
+  const sb = getSupabase();
+  if (!sb) return;
+  sb.from('query_analytics').insert({
+    user_id:       currentUser?.id || null,
+    session_id:    currentUser     ? null : getSessionId(),
+    query_summary: queryText.slice(0, 200),
+    input_tokens:  usage.input_tokens  || 0,
+    output_tokens: usage.output_tokens || 0,
+  }).then(() => {}).catch(() => {});
+}
+
+// Expose helpers to quiz.js (loaded after app.js, same page context).
+window.saveQuizResult = saveQuizResult;
+window.getSupabase    = getSupabase;
 
 // ── Helpers de formato ────────────────────────────
 function escapeHtml(text) {
@@ -765,11 +818,13 @@ async function sendMessage(text) {
     await addMessage('assistant', reply);
     history.push({ role: 'assistant', content: reply });
 
+    logAnalytics(text, data.usage || {});
+
     if (currentUser) {
       if (!currentConversationId) {
         currentConversationId = await createConversation(text);
       }
-      await saveMessagePair(text, reply);
+      await saveMessagePair(text, reply, data.usage || {});
     } else {
       saveHistory();
     }

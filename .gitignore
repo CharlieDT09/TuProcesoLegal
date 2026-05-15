@@ -1,7 +1,10 @@
 .env
 .env.local
 node_modules/
+database/node_modules/
 .netlify/
 .claude/
 *.log
 .DS_Store
+__pycache__/
+*.pyc

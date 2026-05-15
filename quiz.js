@@ -3,21 +3,99 @@
 
   /* ── Ramas del derecho panameño ─────────────────── */
   var BRANCHES = {
-    penal:        { name: 'Derecho Penal',                    emoji: '⚖️',  desc: 'Normas que regulan delitos, faltas y penas en Panamá.' },
-    civil:        { name: 'Derecho Civil',                    emoji: '📜',  desc: 'Contratos, propiedad, obligaciones y relaciones entre particulares.' },
-    familia:      { name: 'Derecho de Familia',               emoji: '👨‍👩‍👧',  desc: 'Matrimonio, divorcio, custodia, alimentos y herencias.' },
-    laboral:      { name: 'Derecho Laboral',                  emoji: '👷',  desc: 'Derechos y deberes del trabajador y el empleador en Panamá.' },
-    comercial:    { name: 'Derecho Comercial',                emoji: '🏢',  desc: 'Empresas, contratos mercantiles, sociedades y comercio.' },
-    const_:       { name: 'Derecho Constitucional',           emoji: '🏛️',  desc: 'La Constitución Política y los derechos fundamentales del ciudadano.' },
-    admin:        { name: 'Derecho Administrativo',           emoji: '📋',  desc: 'Permisos, licitaciones y contrataciones con el Estado panameño.' },
-    tributario:   { name: 'Derecho Tributario',               emoji: '💰',  desc: 'Impuestos, obligaciones fiscales y relaciones con la DGI.' },
-    ambiental:    { name: 'Derecho Ambiental',                emoji: '🌿',  desc: 'Protección del ambiente y recursos naturales en Panamá.' },
-    internacional:{ name: 'Derecho Internacional',            emoji: '🌐',  desc: 'Tratados, relaciones entre Estados y derecho internacional privado.' },
-    maritimo:     { name: 'Derecho Marítimo',                 emoji: '⚓',  desc: 'Canal de Panamá, transporte marítimo y banderas de conveniencia.' },
-    bancario:     { name: 'Derecho Bancario',                 emoji: '🏦',  desc: 'Sistema financiero, banca, inversiones y regulación de la SBP.' },
-    pi:           { name: 'Derecho de Propiedad Intelectual', emoji: '💡',  desc: 'Patentes, marcas, derechos de autor e innovación tecnológica.' },
-    agrario:      { name: 'Derecho Agrario',                  emoji: '🌾',  desc: 'Tierras, reforma agraria y actividades agropecuarias en Panamá.' },
-    consumidor:   { name: 'Derecho del Consumidor',           emoji: '🛒',  desc: 'Protección al consumidor, ACODECO, garantías y publicidad.' },
+    penal:        
+    { 
+      name: 'Derecho Penal',
+      emoji: '⚖️',
+      desc: 'Normas que regulan delitos, faltas y penas en Panamá.' 
+    },
+
+    civil:        
+    { name: 'Derecho Civil',                    
+      emoji: '📜',  
+      desc: 'Contratos, propiedad, obligaciones y relaciones entre particulares.' 
+    },
+
+    familia:      
+    { 
+      name: 'Derecho de Familia',               
+      emoji: '👨‍👩‍👧',  
+      desc: 'Matrimonio, divorcio, custodia, alimentos y herencias.' 
+    },
+    laboral:      
+    { 
+      name: 'Derecho Laboral',                  
+      emoji: '👷',  
+      desc: 'Derechos y deberes del trabajador y el empleador en Panamá.' 
+    },
+    comercial:    
+    { 
+      name: 'Derecho Comercial',                
+      emoji: '🏢',  
+      desc: 'Empresas, contratos mercantiles, sociedades y comercio.' 
+    },
+
+    const_:       
+    { 
+      name: 'Derecho Constitucional',           
+      emoji: '🏛️',  
+      desc: 'La Constitución Política y los derechos fundamentales del ciudadano.' 
+    },
+
+    admin:        
+    { 
+      name: 'Derecho Administrativo',           
+      emoji: '📋',  
+      desc: 'Permisos, licitaciones y contrataciones con el Estado panameño.' 
+    },
+    tributario:   
+    { 
+      name: 'Derecho Tributario',               
+      emoji: '💰',  
+      desc: 'Impuestos, obligaciones fiscales y relaciones con la DGI.' 
+    },
+    ambiental:    
+    { 
+      name: 'Derecho Ambiental',                
+      emoji: '🌿',  
+      desc: 'Protección del ambiente y recursos naturales en Panamá.' 
+    },
+    internacional:
+    { 
+      name: 'Derecho Internacional',            
+      emoji: '🌐',  
+      desc: 'Tratados, relaciones entre Estados y derecho internacional privado.' 
+    },
+    maritimo:     
+    { 
+      name: 'Derecho Marítimo',                 
+      emoji: '⚓',  
+      desc: 'Canal de Panamá, transporte marítimo y banderas de conveniencia.' 
+    },
+    bancario:     
+    { 
+      name: 'Derecho Bancario',                 
+      emoji: '🏦',  
+      desc: 'Sistema financiero, banca, inversiones y regulación de la SBP.' 
+    },
+    pi:           
+    { 
+      name: 'Derecho de Propiedad Intelectual', 
+      emoji: '💡',  
+      desc: 'Patentes, marcas, derechos de autor e innovación tecnológica.' 
+    },
+    agrario:      
+    { 
+      name: 'Derecho Agrario',                  
+      emoji: '🌾',  
+      desc: 'Tierras, reforma agraria y actividades agropecuarias en Panamá.' 
+    },
+    consumidor:   
+    { 
+      name: 'Derecho del Consumidor',           
+      emoji: '🛒',  
+      desc: 'Protección al consumidor, ACODECO, garantías y publicidad.' 
+    },
   };
 
   /* ── Preguntas (8) ──────────────────────────────── */
@@ -226,6 +304,11 @@
 
     stepLabel.textContent    = 'Tu resultado';
     progressFill.style.width = '100%';
+
+    // Persist result to Supabase (best-effort, non-blocking).
+    if (typeof window.saveQuizResult === 'function') {
+      window.saveQuizResult(first, second, third, scores).catch(function () {});
+    }
 
     body.innerHTML =
       '<div class="quiz-result">' +

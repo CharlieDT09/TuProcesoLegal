@@ -1,0 +1,14 @@
+{
+  "name": "tpl-database",
+  "version": "1.0.0",
+  "description": "Tu Proceso Legal — database setup scripts",
+  "private": true,
+  "scripts": {
+    "setup": "node setup.js",
+    "scrape": "python scraper/scrape_articles.py"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "pg": "^8.12.0"
+  }
+}
