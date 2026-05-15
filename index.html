@@ -21,6 +21,7 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js" defer></script>
   <script src="app.js" defer></script>
+  <script src="quiz.js" defer></script>
 </head>
 <body>
 
@@ -84,6 +85,17 @@
           </svg>
           <span>Orientación clara, paso a paso</span>
         </div>
+      </div>
+
+      <!-- Quiz teaser -->
+      <div class="lp-quiz-teaser" id="quizStartBtn" role="button" tabindex="0" aria-label="Iniciar quiz: Descubre tu Rama">
+        <span class="lp-quiz-badge">NUEVO</span>
+        <span class="lp-quiz-icon" aria-hidden="true">🧠</span>
+        <div class="lp-quiz-text">
+          <strong>Descubre tu Rama</strong>
+          <span>8 preguntas para encontrar tu área legal ideal en Panamá</span>
+        </div>
+        <span class="lp-quiz-arrow" aria-hidden="true">→</span>
       </div>
 
       <button class="lp-cta" id="startChatHero">Iniciar consulta &rarr;</button>
@@ -337,6 +349,23 @@
         <p class="auth-skip-note">Tu historial no se guardará entre sesiones.</p>
       </div>
 
+    </div>
+  </div>
+
+  <!-- ══ QUIZ: DESCUBRE TU RAMA ═══════════════════ -->
+  <div class="quiz-root hidden" id="quizRoot" role="dialog" aria-modal="true" aria-label="Quiz: Descubre tu Rama">
+    <div class="quiz-modal">
+      <div class="quiz-header">
+        <div class="quiz-header-top">
+          <span class="quiz-title">🧠 Descubre tu Rama</span>
+          <button class="quiz-close" aria-label="Cerrar quiz">✕</button>
+        </div>
+        <div class="quiz-progress-wrap" aria-hidden="true">
+          <div class="quiz-progress-fill"></div>
+        </div>
+        <span class="quiz-step-label" aria-live="polite">Pregunta 1 de 8</span>
+      </div>
+      <div class="quiz-body"></div>
     </div>
   </div>
 
