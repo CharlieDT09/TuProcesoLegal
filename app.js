@@ -937,3 +937,67 @@ function scrollToBottom() {
     document.getElementById('bottom').scrollIntoView({ behavior: 'smooth' });
   }, SCROLL_DELAY_MS);
 }
+
+// ══ JuriTools Sidebar ════════════════════════════
+(function initJuriTools() {
+  const trigger   = document.getElementById('jtTrigger');
+  const btn       = document.getElementById('jtBtn');
+  const newBadge  = document.getElementById('jtNewBadge');
+  const overlay   = document.getElementById('jtOverlay');
+  const closeBtn  = document.getElementById('jtClose');
+  const backdrop  = document.getElementById('jtBackdrop');
+  const quizCard  = document.getElementById('jtQuizCard');
+
+  if (!trigger || !overlay) return;
+
+  // Mostrar/ocultar el botón según si el chat está activo
+  const observer = new MutationObserver(() => {
+    const chatActive = appRoot.classList.contains('active');
+    trigger.style.display = chatActive ? 'flex' : 'none';
+    if (!chatActive) closeJT();
+  });
+  observer.observe(appRoot, { attributes: true, attributeFilter: ['class'] });
+
+  // Ocultar badge si ya fue visto antes
+  if (localStorage.getItem('jt_badge_seen')) {
+    newBadge.style.display = 'none';
+  }
+
+  function openJT() {
+    overlay.classList.remove('hidden');
+    btn.setAttribute('aria-expanded', 'true');
+    // Ocultar badge para siempre tras primer click
+    if (newBadge.style.display !== 'none') {
+      newBadge.style.display = 'none';
+      localStorage.setItem('jt_badge_seen', '1');
+    }
+  }
+
+  function closeJT() {
+    overlay.classList.add('hidden');
+    btn.setAttribute('aria-expanded', 'false');
+  }
+
+  btn.addEventListener('click', openJT);
+  newBadge.addEventListener('click', openJT);
+  closeBtn.addEventListener('click', closeJT);
+  backdrop.addEventListener('click', closeJT);
+
+  // Cerrar con Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !overlay.classList.contains('hidden')) closeJT();
+  });
+
+  // "Descubre tu Rama" → abrir el quiz modal
+  quizCard.addEventListener('click', () => {
+    closeJT();
+    const quizBtn = document.getElementById('quizStartBtn');
+    if (quizBtn) quizBtn.click();
+  });
+  quizCard.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      quizCard.click();
+    }
+  });
+}());

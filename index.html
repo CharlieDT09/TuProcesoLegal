@@ -369,6 +369,114 @@
     </div>
   </div>
 
+  <!-- ══ JURITOOLS — BOTÓN FLOTANTE + SIDEBAR ══════ -->
+  <!-- Trigger flotante (visible solo dentro del chat) -->
+  <div class="jt-trigger" id="jtTrigger" aria-label="JuriTools" style="display:none">
+    <div class="jt-new-badge" id="jtNewBadge" aria-label="Nuevas herramientas disponibles">✨ NUEVAS HERRAMIENTAS</div>
+    <button class="jt-btn" id="jtBtn" aria-label="Abrir JuriTools — herramientas jurídicas" aria-expanded="false" aria-controls="jtOverlay">
+      <!-- Ícono balanza minimal -->
+      <svg class="jt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="12" y1="3" x2="12" y2="20"/>
+        <path d="M5 20h14"/>
+        <line x1="4.5" y1="7" x2="19.5" y2="7"/>
+        <path d="M4.5 7 L2 14 C2 15.1 3.12 16 4.5 16 S7 15.1 7 14 Z"/>
+        <path d="M19.5 7 L17 14 C17 15.1 18.12 16 19.5 16 S22 15.1 22 14 Z"/>
+      </svg>
+      <span>JuriTools</span>
+    </button>
+  </div>
+
+  <!-- Sidebar overlay -->
+  <div class="jt-overlay hidden" id="jtOverlay" role="dialog" aria-modal="true" aria-label="JuriTools — Herramientas jurídicas">
+    <aside class="jt-sidebar" id="jtSidebar">
+      <!-- Header -->
+      <div class="jt-header">
+        <div class="jt-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="3" x2="12" y2="20"/>
+            <path d="M5 20h14"/>
+            <line x1="4.5" y1="7" x2="19.5" y2="7"/>
+            <path d="M4.5 7 L2 14 C2 15.1 3.12 16 4.5 16 S7 15.1 7 14 Z"/>
+            <path d="M19.5 7 L17 14 C17 15.1 18.12 16 19.5 16 S22 15.1 22 14 Z"/>
+          </svg>
+          <span>JuriTools</span>
+        </div>
+        <button class="jt-close" id="jtClose" aria-label="Cerrar JuriTools">✕</button>
+      </div>
+
+      <!-- Lista de herramientas -->
+      <div class="jt-list" id="jtList">
+
+        <!-- Ruta Procesal (próximamente) -->
+        <div class="jt-card" role="button" tabindex="0" aria-label="Ruta Procesal — próximamente">
+          <div class="jt-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="9 18 15 12 9 6"/>
+              <line x1="3" y1="12" x2="15" y2="12"/>
+              <circle cx="19" cy="12" r="2"/>
+            </svg>
+          </div>
+          <div class="jt-card-info">
+            <div class="jt-card-name">Ruta Procesal</div>
+            <div class="jt-card-desc">Guía paso a paso para navegar cualquier proceso judicial en Panamá.</div>
+          </div>
+          <span class="jt-soon-tag" aria-label="Próximamente">Próximamente</span>
+        </div>
+
+        <!-- TuEscritoIA (próximamente) -->
+        <div class="jt-card" role="button" tabindex="0" aria-label="TuEscritoIA — próximamente">
+          <div class="jt-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+          </div>
+          <div class="jt-card-info">
+            <div class="jt-card-name">TuEscritoIA</div>
+            <div class="jt-card-desc">Genera escritos jurídicos profesionales asistidos por inteligencia artificial.</div>
+          </div>
+          <span class="jt-soon-tag" aria-label="Próximamente">Próximamente</span>
+        </div>
+
+        <!-- Descubre tu Rama (ACTIVO) -->
+        <div class="jt-card jt-card-live" id="jtQuizCard" role="button" tabindex="0" aria-label="Descubre tu Rama — iniciar quiz">
+          <div class="jt-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+              <line x1="12" y1="17" x2="12.01" y2="17" stroke-width="2.4"/>
+            </svg>
+          </div>
+          <div class="jt-card-info">
+            <div class="jt-card-name">Descubre tu Rama</div>
+            <div class="jt-card-desc">8 preguntas para encontrar tu área legal ideal en Panamá.</div>
+          </div>
+          <span class="jt-card-arrow" aria-hidden="true">→</span>
+        </div>
+
+        <!-- Biblioteca Jurídica (próximamente) -->
+        <div class="jt-card" role="button" tabindex="0" aria-label="Biblioteca Jurídica — próximamente">
+          <div class="jt-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+          </div>
+          <div class="jt-card-info">
+            <div class="jt-card-name">Biblioteca Jurídica</div>
+            <div class="jt-card-desc">Accede a los códigos y leyes vigentes de la República de Panamá.</div>
+          </div>
+          <span class="jt-soon-tag" aria-label="Próximamente">Próximamente</span>
+        </div>
+
+      </div><!-- /.jt-list -->
+    </aside>
+    <div class="jt-backdrop" id="jtBackdrop" aria-hidden="true"></div>
+  </div>
+
   <!-- ══ CAJÓN DE HISTORIAL DE CONSULTAS ══════════ -->
   <div class="history-overlay hidden" id="historyOverlay" role="dialog" aria-modal="true" aria-label="Mis consultas guardadas">
     <div class="history-drawer">
