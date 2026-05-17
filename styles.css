@@ -1796,3 +1796,333 @@ html, body {
   .quiz-podium-card.silver { order: 0; }
   .quiz-podium-card.bronze { order: 1; }
 }
+
+/* ══ JuriTools — Botón flotante + Sidebar ════════ */
+
+/* Contenedor del botón flotante */
+.jt-trigger {
+  position: fixed;
+  left: 18px;
+  bottom: 130px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+/* Badge "✨ NUEVAS HERRAMIENTAS" */
+.jt-new-badge {
+  background: linear-gradient(135deg, #c09d3c 0%, #ddb94e 100%);
+  color: #070c18;
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  padding: 4px 10px;
+  border-radius: 20px;
+  box-shadow:
+    0 0 8px  rgba(192, 157, 60, 0.5),
+    0 0 20px rgba(192, 157, 60, 0.2);
+  animation: jtBadgePulse 3s ease-in-out infinite;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+@keyframes jtBadgePulse {
+  0%, 100% {
+    box-shadow:
+      0 0 8px  rgba(192, 157, 60, 0.45),
+      0 0 18px rgba(192, 157, 60, 0.18);
+  }
+  50% {
+    box-shadow:
+      0 0 14px rgba(192, 157, 60, 0.7),
+      0 0 28px rgba(192, 157, 60, 0.35);
+    transform: scale(1.03);
+  }
+}
+
+/* Botón principal JuriTools */
+.jt-btn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: linear-gradient(145deg, #0c1830 0%, #101f3c 100%);
+  border: 1px solid rgba(192, 157, 60, 0.38);
+  border-radius: 14px;
+  padding: 10px 18px 10px 14px;
+  color: var(--gold-l);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  cursor: pointer;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+  box-shadow:
+    0 4px 18px rgba(0, 0, 0, 0.45),
+    0 0 0    1px rgba(192, 157, 60, 0.08);
+  white-space: nowrap;
+}
+
+.jt-btn:hover {
+  border-color: rgba(192, 157, 60, 0.62);
+  box-shadow:
+    0 6px 24px rgba(0, 0, 0, 0.55),
+    0 0 18px  rgba(192, 157, 60, 0.22);
+  transform: translateY(-2px);
+}
+
+.jt-btn:active { transform: translateY(0); }
+
+.jt-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--gold);
+}
+
+/* ── Overlay (fondo oscuro al abrir) ─────────── */
+.jt-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  display: flex;
+  align-items: stretch;
+  pointer-events: none;
+}
+
+.jt-overlay:not(.hidden) {
+  pointer-events: auto;
+}
+
+/* ── Panel lateral ───────────────────────────── */
+.jt-sidebar {
+  width: 300px;
+  max-width: 82vw;
+  height: 100%;
+  background: linear-gradient(160deg, #0b1628 0%, #0e1c38 100%);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
+  transform: translateX(-100%);
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.jt-overlay:not(.hidden) .jt-sidebar {
+  transform: translateX(0);
+}
+
+/* Backdrop (área oscura clickeable para cerrar) */
+.jt-backdrop {
+  flex: 1;
+  background: rgba(4, 9, 20, 0.72);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.32s ease;
+}
+
+.jt-overlay:not(.hidden) .jt-backdrop {
+  opacity: 1;
+}
+
+/* ── Header del sidebar ──────────────────────── */
+.jt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.jt-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--serif);
+  font-size: 18px;
+  color: var(--text);
+}
+
+.jt-title svg {
+  width: 22px;
+  height: 22px;
+  color: var(--gold);
+  filter: drop-shadow(0 0 5px rgba(192, 157, 60, 0.45));
+}
+
+.jt-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: var(--card);
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.jt-close:hover { background: rgba(255, 255, 255, 0.1); }
+
+/* ── Lista scrollable de herramientas ────────── */
+.jt-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 12px 24px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(192, 157, 60, 0.25) transparent;
+}
+
+.jt-list::-webkit-scrollbar            { width: 4px; }
+.jt-list::-webkit-scrollbar-track      { background: transparent; }
+.jt-list::-webkit-scrollbar-thumb      { background: rgba(192, 157, 60, 0.25); border-radius: 4px; }
+.jt-list::-webkit-scrollbar-thumb:hover{ background: rgba(192, 157, 60, 0.45); }
+
+/* ── Cards de herramientas ───────────────────── */
+.jt-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  padding: 14px 13px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.18s ease;
+  position: relative;
+  overflow: hidden;
+  text-align: left;
+}
+
+.jt-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 13px;
+  background: radial-gradient(ellipse at 20% 60%, rgba(192, 157, 60, 0.07) 0%, transparent 65%);
+  opacity: 0;
+  transition: opacity 0.22s ease;
+  pointer-events: none;
+}
+
+.jt-card:hover::after    { opacity: 1; }
+.jt-card:hover {
+  border-color: rgba(192, 157, 60, 0.42);
+  box-shadow:
+    0 0 0   1px rgba(192, 157, 60, 0.15),
+    0 4px 18px rgba(0, 0, 0, 0.35);
+  transform: translateY(-1px);
+}
+
+/* Card activa (Descubre tu Rama — disponible) */
+.jt-card-live {
+  border-color: rgba(192, 157, 60, 0.28);
+}
+
+.jt-card-live:hover {
+  border-color: rgba(192, 157, 60, 0.55);
+  box-shadow:
+    0 0 0   1px rgba(192, 157, 60, 0.22),
+    0 4px 20px rgba(0, 0, 0, 0.4),
+    0 0 16px rgba(192, 157, 60, 0.12);
+}
+
+/* Icono de la herramienta */
+.jt-card-icon {
+  width: 38px;
+  height: 38px;
+  background: var(--gold-dim);
+  border: 1px solid rgba(192, 157, 60, 0.22);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.jt-card-icon svg {
+  width: 19px;
+  height: 19px;
+  color: var(--gold);
+}
+
+/* Texto de la card */
+.jt-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.jt-card-name {
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jt-card-desc {
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+/* Flecha (herramientas activas) */
+.jt-card-arrow {
+  color: var(--gold);
+  font-size: 16px;
+  opacity: 0.55;
+  transition: opacity 0.15s, transform 0.18s;
+  flex-shrink: 0;
+}
+
+.jt-card:hover .jt-card-arrow {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+/* Badge "Próximamente" */
+.jt-soon-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--gold);
+  background: rgba(192, 157, 60, 0.1);
+  border: 1px solid rgba(192, 157, 60, 0.22);
+  padding: 3px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Responsive Mobile ───────────────────────── */
+@media (max-width: 600px) {
+  .jt-trigger {
+    left: 12px;
+    bottom: 110px;
+  }
+
+  .jt-sidebar {
+    width: 80vw;
+    max-width: 80vw;
+  }
+
+  .jt-btn {
+    padding: 9px 14px 9px 12px;
+    font-size: 12px;
+  }
+}
