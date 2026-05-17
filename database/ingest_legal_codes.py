@@ -6,23 +6,59 @@ Extrae texto de los PDFs legales panameños, los divide por artículo,
 genera embeddings con OpenAI text-embedding-3-small y los sube a
 Supabase (tabla legal_documents con pgvector).
 
-Instalación de dependencias:
-    pip install pdfplumber openai supabase python-dotenv tqdm
+═══════════════════════════════════════════════════════════════════
+INSTALACIÓN DE POPPLER (requerido para OCR de PDFs escaneados)
+═══════════════════════════════════════════════════════════════════
 
-Variables de entorno requeridas (en database/.env o como env vars):
+Windows:
+  1. Descarga el ZIP desde:
+     https://github.com/oschwartz10612/poppler-windows/releases/latest
+  2. Extrae en C:\\poppler
+  3. Agrega C:\\poppler\\Library\\bin al PATH del sistema:
+     Panel de Control → Variables de entorno → PATH → Nueva entrada
+  4. Verifica: pdftoppm -v  (debe mostrar versión)
+
+  Alternativa rápida con Chocolatey:
+     choco install poppler
+
+  Alternativa con Conda:
+     conda install -c conda-forge poppler
+
+macOS:
+  brew install poppler
+
+Linux:
+  sudo apt install poppler-utils   # Ubuntu/Debian
+  sudo dnf install poppler-utils   # Fedora
+
+═══════════════════════════════════════════════════════════════════
+INSTALACIÓN DE DEPENDENCIAS PYTHON
+═══════════════════════════════════════════════════════════════════
+
+  pip install -r requirements_rag.txt
+
+  (incluye: pdfplumber, pdf2image, pytesseract, openai, supabase, tqdm)
+
+  Para OCR también necesitas Tesseract:
+  Windows: https://github.com/UB-Mannheim/tesseract/wiki
+           Instalar con idioma Español activado
+  macOS:   brew install tesseract tesseract-lang
+  Linux:   sudo apt install tesseract-ocr tesseract-ocr-spa
+
+═══════════════════════════════════════════════════════════════════
+VARIABLES DE ENTORNO  (database/.env)
+═══════════════════════════════════════════════════════════════════
+
     SUPABASE_URL          — URL de tu proyecto Supabase
     SUPABASE_SERVICE_KEY  — Service Role Key (Settings → API)
     OPENAI_API_KEY        — API key de OpenAI
 
-Uso:
+USO:
     cd database
-    python ingest_legal_codes.py
-
-    # Procesar solo un archivo:
+    python ingest_legal_codes.py              # procesar todos los PDFs
+    python ingest_legal_codes.py --dry-run    # contar chunks sin subir
     python ingest_legal_codes.py --file "codigo-de-trabajo.pdf"
-
-    # Ver stats sin subir:
-    python ingest_legal_codes.py --dry-run
+    python ingest_legal_codes.py --no-ocr     # solo pdfplumber, sin OCR
 """
 
 import os
@@ -32,32 +68,51 @@ import time
 import argparse
 from pathlib import Path
 
-# ── Dependencias opcionales con mensajes claros ──────────────────
+# ── Dependencias obligatorias ────────────────────────────────────
 try:
     import pdfplumber
 except ImportError:
-    sys.exit("❌  Falta pdfplumber. Ejecuta: pip install pdfplumber")
+    sys.exit("❌  Falta pdfplumber. Ejecuta: pip install -r requirements_rag.txt")
 
 try:
     from openai import OpenAI
 except ImportError:
-    sys.exit("❌  Falta openai. Ejecuta: pip install openai")
+    sys.exit("❌  Falta openai. Ejecuta: pip install -r requirements_rag.txt")
 
 try:
     from supabase import create_client
 except ImportError:
-    sys.exit("❌  Falta supabase. Ejecuta: pip install supabase")
+    sys.exit("❌  Falta supabase. Ejecuta: pip install -r requirements_rag.txt")
+
+# ── Dependencias opcionales (OCR con Poppler) ────────────────────
+try:
+    from pdf2image import convert_from_path
+    from pdf2image.exceptions import (
+        PDFInfoNotInstalledError,
+        PDFPageCountError,
+        PDFSyntaxError,
+    )
+    PDF2IMAGE_AVAILABLE = True
+except ImportError:
+    PDF2IMAGE_AVAILABLE = False
+
+try:
+    import pytesseract
+    from PIL import Image
+    TESSERACT_AVAILABLE = True
+except ImportError:
+    TESSERACT_AVAILABLE = False
 
 try:
     from dotenv import load_dotenv
     load_dotenv(Path(__file__).parent / ".env")
 except ImportError:
-    pass  # .env es opcional si las vars ya están en el entorno
+    pass  # .env es opcional
 
 try:
     from tqdm import tqdm
 except ImportError:
-    tqdm = None  # fallback sin barra de progreso
+    tqdm = None
 
 
 # ════════════════════════════════════════════════════════════════
@@ -70,6 +125,19 @@ OPENAI_KEY    = os.environ.get("OPENAI_API_KEY", "")
 
 # Carpeta con los PDFs (ajusta si es necesario)
 PDF_DIR = Path(r"C:\Users\PC\Downloads\codigos\codigos")
+
+# ── Configuración Poppler ────────────────────────────────────────
+# Si poppler no está en el PATH, apunta aquí a su carpeta bin.
+# Ejemplo Windows: r"C:\poppler\Library\bin"
+# Dejar en None si ya está en el PATH del sistema.
+POPPLER_PATH: str | None = os.environ.get("POPPLER_PATH") or None
+
+# Mínimo de caracteres extraídos por pdfplumber para considerar la página
+# como texto-nativo (por debajo → se intenta OCR con Poppler + Tesseract)
+MIN_TEXT_CHARS_PER_PAGE = 80
+
+# Idioma de Tesseract para el OCR (español panameño)
+TESSERACT_LANG = "spa"
 
 EMBED_MODEL     = "text-embedding-3-small"  # 1536 dims — $0.02/M tokens
 MAX_CHUNK_CHARS = 2500   # máximo caracteres por chunk de artículo
@@ -106,21 +174,98 @@ CODE_NAMES: dict[str, str] = {
 
 
 # ════════════════════════════════════════════════════════════════
-# EXTRACCIÓN DE TEXTO
+# EXTRACCIÓN DE TEXTO — 3 estrategias en cascada
+#
+#  1. pdfplumber  → rápido, exacto para PDFs con texto nativo
+#  2. Poppler pdftotext (via pdf2image) → mejor para PDFs complejos
+#  3. Poppler + Tesseract OCR → fallback para PDFs escaneados
 # ════════════════════════════════════════════════════════════════
 
-def extract_text(pdf_path: Path) -> str:
-    """Extrae todo el texto de un PDF; retorna '' si falla."""
+def _check_poppler() -> bool:
+    """Verifica que Poppler esté disponible y funcionando."""
+    if not PDF2IMAGE_AVAILABLE:
+        return False
+    import subprocess
+    try:
+        cmd = ["pdftoppm", "-v"]
+        if POPPLER_PATH:
+            cmd[0] = str(Path(POPPLER_PATH) / "pdftoppm")
+        subprocess.run(cmd, capture_output=True, timeout=5)
+        return True
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return False
+
+
+def extract_text_pdfplumber(pdf_path: Path) -> tuple[str, int]:
+    """
+    Extrae texto con pdfplumber.
+    Retorna (texto, páginas_con_poco_texto).
+    """
     parts: list[str] = []
+    weak_pages = 0
     try:
         with pdfplumber.open(pdf_path) as pdf:
             for page in pdf.pages:
-                t = page.extract_text(x_tolerance=3, y_tolerance=3)
-                if t:
-                    parts.append(t)
+                t = page.extract_text(x_tolerance=3, y_tolerance=3) or ""
+                parts.append(t)
+                if len(t.strip()) < MIN_TEXT_CHARS_PER_PAGE:
+                    weak_pages += 1
     except Exception as e:
-        print(f"    ⚠  Error leyendo {pdf_path.name}: {e}")
+        print(f"    ⚠  pdfplumber: {e}")
+    return "\n".join(parts), weak_pages
+
+
+def extract_text_poppler_ocr(pdf_path: Path) -> str:
+    """
+    Convierte cada página a imagen con Poppler (pdf2image) y aplica
+    OCR con Tesseract. Usado para PDFs escaneados o con texto corrupto.
+    """
+    if not PDF2IMAGE_AVAILABLE:
+        return ""
+    if not TESSERACT_AVAILABLE:
+        print("    ⚠  pytesseract no instalado — OCR no disponible")
+        return ""
+
+    parts: list[str] = []
+    try:
+        kwargs: dict = {"dpi": 300, "fmt": "png", "thread_count": 2}
+        if POPPLER_PATH:
+            kwargs["poppler_path"] = POPPLER_PATH
+
+        images = convert_from_path(str(pdf_path), **kwargs)
+        for img in images:
+            text = pytesseract.image_to_string(img, lang=TESSERACT_LANG)
+            if text.strip():
+                parts.append(text)
+    except PDFInfoNotInstalledError:
+        print("    ❌  Poppler no está en el PATH. Instálalo según las instrucciones del script.")
+    except Exception as e:
+        print(f"    ⚠  OCR Poppler+Tesseract: {e}")
+
     return "\n".join(parts)
+
+
+def extract_text(pdf_path: Path, use_ocr: bool = True) -> str:
+    """
+    Estrategia en cascada:
+      1. pdfplumber  — texto nativo
+      2. Si muchas páginas tienen poco texto → OCR con Poppler + Tesseract
+    """
+    text, weak_pages = extract_text_pdfplumber(pdf_path)
+    total_pages = max(1, text.count("\n") // 10 + 1)  # estimado
+
+    # Si más del 40% de las páginas tienen poco texto → intentar OCR
+    needs_ocr = use_ocr and (weak_pages / total_pages) > 0.40
+
+    if needs_ocr:
+        print(f"    🔍  {weak_pages} páginas con poco texto → activando OCR (Poppler + Tesseract)")
+        ocr_text = extract_text_poppler_ocr(pdf_path)
+        if len(ocr_text.strip()) > len(text.strip()):
+            print("    ✅  OCR produjo más texto — usando resultado OCR")
+            return ocr_text
+        print("    ↩  OCR no mejoró resultado — usando pdfplumber")
+
+    return text
 
 
 # ════════════════════════════════════════════════════════════════
@@ -260,9 +405,28 @@ def main():
     parser = argparse.ArgumentParser(description="Ingesta de PDFs legales → Supabase pgvector")
     parser.add_argument("--file",    help="Procesar solo este archivo PDF (nombre exacto)")
     parser.add_argument("--dry-run", action="store_true", help="Extraer y contar chunks sin subir")
+    parser.add_argument("--no-ocr",  action="store_true", help="Desactivar OCR (solo pdfplumber)")
     args = parser.parse_args()
+    use_ocr = not args.no_ocr
 
     print("⚖️  Tu Proceso Legal — Ingesta RAG con pgvector\n")
+
+    # ── Estado de Poppler / OCR ───────────────────────────────────
+    poppler_ok    = _check_poppler()
+    tesseract_ok  = TESSERACT_AVAILABLE
+    ocr_ready     = use_ocr and poppler_ok and tesseract_ok
+
+    print("── Motores de extracción ──────────────────────────")
+    print(f"  pdfplumber  : ✅ activo (texto nativo)")
+    print(f"  Poppler     : {'✅ detectado' if poppler_ok else '⚠  no encontrado — instalar para OCR'}")
+    print(f"  Tesseract   : {'✅ detectado' if tesseract_ok else '⚠  no encontrado — instalar para OCR'}")
+    print(f"  OCR activo  : {'✅ sí (PDFs escaneados serán procesados)' if ocr_ready else '❌ no — solo texto nativo'}")
+    if POPPLER_PATH:
+        print(f"  Poppler path: {POPPLER_PATH}")
+    print()
+
+    if use_ocr and not ocr_ready:
+        print("  💡 Para activar OCR consulta las instrucciones al inicio del script.\n")
 
     # Validar configuración
     missing = [v for v in ("SUPABASE_URL", "SUPABASE_SERVICE_KEY", "OPENAI_API_KEY")
@@ -311,8 +475,8 @@ def main():
         if not tqdm:
             print(label)
 
-        # 1. Extraer texto
-        text = extract_text(pdf_path)
+        # 1. Extraer texto (pdfplumber + OCR si está disponible)
+        text = extract_text(pdf_path, use_ocr=ocr_ready)
         if not text.strip():
             msg = f"  ⚠  Sin texto extraído (¿PDF escaneado?): {pdf_path.name}"
             print(msg)
