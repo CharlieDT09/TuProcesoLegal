@@ -3,8 +3,12 @@
 ingest_legal_codes.py
 =====================
 Extrae texto de los PDFs legales panameños, los divide por artículo,
-genera embeddings con OpenAI text-embedding-3-small y los sube a
+genera embeddings con Voyage AI voyage-law-2 y los sube a
 Supabase (tabla legal_documents con pgvector).
+
+Voyage AI es el proveedor oficial de embeddings de Anthropic.
+voyage-law-2 esta entrenado especificamente en documentos legales.
+200M tokens gratis, sin tarjeta de credito.
 
 ═══════════════════════════════════════════════════════════════════
 INSTALACIÓN DE POPPLER (requerido para OCR de PDFs escaneados)
@@ -37,7 +41,7 @@ INSTALACIÓN DE DEPENDENCIAS PYTHON
 
   pip install -r requirements_rag.txt
 
-  (incluye: pdfplumber, pdf2image, pytesseract, openai, supabase, tqdm)
+  (incluye: pdfplumber, pdf2image, pytesseract, voyageai, supabase, tqdm)
 
   Para OCR también necesitas Tesseract:
   Windows: https://github.com/UB-Mannheim/tesseract/wiki
@@ -51,7 +55,7 @@ VARIABLES DE ENTORNO  (database/.env)
 
     SUPABASE_URL          — URL de tu proyecto Supabase
     SUPABASE_SERVICE_KEY  — Service Role Key (Settings → API)
-    OPENAI_API_KEY        — API key de OpenAI
+    VOYAGE_API_KEY        — API key de Voyage AI (voyageai.com)
 
 USO:
     cd database
@@ -75,9 +79,9 @@ except ImportError:
     sys.exit("❌  Falta pdfplumber. Ejecuta: pip install -r requirements_rag.txt")
 
 try:
-    from openai import OpenAI
+    import voyageai
 except ImportError:
-    sys.exit("❌  Falta openai. Ejecuta: pip install -r requirements_rag.txt")
+    sys.exit("❌  Falta voyageai. Ejecuta: pip install -r requirements_rag.txt")
 
 try:
     from supabase import create_client
@@ -121,7 +125,7 @@ except ImportError:
 
 SUPABASE_URL  = os.environ.get("SUPABASE_URL", "")
 SUPABASE_KEY  = os.environ.get("SUPABASE_SERVICE_KEY", "")
-OPENAI_KEY    = os.environ.get("OPENAI_API_KEY", "")
+VOYAGE_KEY    = os.environ.get("VOYAGE_API_KEY", "")
 
 # Carpeta con los PDFs (ajusta si es necesario)
 PDF_DIR = Path(r"C:\Users\PC\Downloads\codigos\codigos")
@@ -139,9 +143,10 @@ MIN_TEXT_CHARS_PER_PAGE = 80
 # Idioma de Tesseract para el OCR (español panameño)
 TESSERACT_LANG = "spa"
 
-EMBED_MODEL     = "text-embedding-3-small"  # 1536 dims — $0.02/M tokens
+EMBED_MODEL     = "voyage-law-2"  # 1024 dims — entrenado en documentos legales
+EMBED_DIMS      = 1024
 MAX_CHUNK_CHARS = 2500   # máximo caracteres por chunk de artículo
-BATCH_SIZE      = 50     # artículos por llamada a OpenAI + inserción Supabase
+BATCH_SIZE      = 50     # artículos por batch de Voyage AI + inserción Supabase
 RATE_LIMIT_WAIT = 0.25   # segundos entre batches (evitar rate limit)
 
 # ── Mapeo nombre de archivo → nombre legible del código ──────────
@@ -369,14 +374,15 @@ def _split_long(text: str, max_chars: int) -> list[str]:
 
 
 # ════════════════════════════════════════════════════════════════
-# EMBEDDINGS (OpenAI)
+# EMBEDDINGS (Voyage AI — voyage-law-2)
+# Modelo especializado en documentos legales, partner oficial de Anthropic
 # ════════════════════════════════════════════════════════════════
 
-def get_embeddings(texts: list[str], client: OpenAI) -> list[list[float]]:
-    """Genera embeddings para una lista de textos (un API call por batch)."""
-    cleaned = [t.replace("\n", " ").strip()[:8000] for t in texts]  # límite de tokens
-    resp = client.embeddings.create(model=EMBED_MODEL, input=cleaned)
-    return [item.embedding for item in resp.data]
+def get_embeddings(texts: list[str], client: voyageai.Client) -> list[list[float]]:
+    """Genera embeddings legales con Voyage AI voyage-law-2."""
+    cleaned = [t.replace("\n", " ").strip()[:16000] for t in texts]  # 16k token ctx
+    result  = client.embed(cleaned, model=EMBED_MODEL, input_type="document")
+    return result.embeddings
 
 
 # ════════════════════════════════════════════════════════════════
@@ -429,7 +435,7 @@ def main():
         print("  💡 Para activar OCR consulta las instrucciones al inicio del script.\n")
 
     # Validar configuración
-    missing = [v for v in ("SUPABASE_URL", "SUPABASE_SERVICE_KEY", "OPENAI_API_KEY")
+    missing = [v for v in ("SUPABASE_URL", "SUPABASE_SERVICE_KEY", "VOYAGE_API_KEY")
                if not os.environ.get(v)]
     if missing and not args.dry_run:
         print("❌  Faltan variables de entorno:")
@@ -456,7 +462,7 @@ def main():
     print(f"📂  PDFs encontrados: {len(pdf_files)}\n")
 
     if not args.dry_run:
-        openai_client = OpenAI(api_key=OPENAI_KEY)
+        voyage_client = voyageai.Client(api_key=VOYAGE_KEY)
         sb            = create_client(SUPABASE_URL, SUPABASE_KEY)
 
         print("🗑   Limpiando tabla legal_documents...")
@@ -500,7 +506,7 @@ def main():
             texts = [c["content"] for c in batch]
 
             try:
-                embeddings = get_embeddings(texts, openai_client)
+                embeddings = get_embeddings(texts, voyage_client)
                 upload_batch(batch, embeddings, sb)
                 total_chars_est += sum(len(t) for t in texts)
                 time.sleep(RATE_LIMIT_WAIT)
@@ -520,7 +526,7 @@ def main():
 
     # ── Resumen ──────────────────────────────────────────────────
     tokens_est = total_chars_est // 4
-    cost_usd   = (tokens_est / 1_000_000) * 0.02
+    cost_usd   = 0.0  # voyage-law-2 es gratis hasta 200M tokens
 
     print("\n" + "═" * 50)
     print(f"{'DRY RUN — ' if args.dry_run else ''}INGESTA COMPLETADA")

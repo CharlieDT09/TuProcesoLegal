@@ -11,7 +11,7 @@
 //
 // Variables de entorno requeridas en Netlify:
 //   ANTHROPIC_API_KEY   — Claude API key
-//   OPENAI_API_KEY      — para embeddings (text-embedding-3-small)
+//   VOYAGE_API_KEY      — Voyage AI key (voyage-law-2, partner oficial Anthropic)
 //   SUPABASE_URL        — URL del proyecto Supabase
 //   SUPABASE_ANON_KEY   — anon key (solo lectura de legal_documents)
 // ================================================
@@ -90,7 +90,7 @@ exports.handler = async function (event) {
     : messages;
 
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
-  const openaiKey    = process.env.OPENAI_API_KEY;
+  const voyageKey    = process.env.VOYAGE_API_KEY;
   const supabaseUrl  = process.env.SUPABASE_URL;
   const supabaseAnon = process.env.SUPABASE_ANON_KEY;
 
@@ -106,7 +106,7 @@ exports.handler = async function (event) {
 
   // ── PASO 1: RAG — recuperar artículos relevantes ──────────────
   let ragContext = '';
-  const ragAvailable = openaiKey && supabaseUrl && supabaseAnon;
+  const ragAvailable = voyageKey && supabaseUrl && supabaseAnon;
 
   if (ragAvailable) {
     try {
@@ -117,7 +117,7 @@ exports.handler = async function (event) {
 
       if (userQuery) {
         const articles = await retrieveRelevantArticles(
-          userQuery, openaiKey, supabaseUrl, supabaseAnon
+          userQuery, voyageKey, supabaseUrl, supabaseAnon
         );
         if (articles.length > 0) {
           ragContext = buildRagContext(articles);
@@ -176,27 +176,28 @@ exports.handler = async function (event) {
 // RAG — Búsqueda semántica en Supabase pgvector
 // ════════════════════════════════════════════════════════════════
 
-async function retrieveRelevantArticles(query, openaiKey, supabaseUrl, supabaseAnon) {
-  // 1. Generar embedding del query
-  const embeddingRes = await fetch('https://api.openai.com/v1/embeddings', {
+async function retrieveRelevantArticles(query, voyageKey, supabaseUrl, supabaseAnon) {
+  // 1. Generar embedding del query con Voyage AI voyage-law-2
+  const embeddingRes = await fetch('https://api.voyageai.com/v1/embeddings', {
     method: 'POST',
     headers: {
       'Content-Type':  'application/json',
-      'Authorization': `Bearer ${openaiKey}`,
+      'Authorization': `Bearer ${voyageKey}`,
     },
     body: JSON.stringify({
-      model: 'text-embedding-3-small',
-      input: query.replace(/\n/g, ' ').slice(0, 8000),
+      model:      'voyage-law-2',
+      input:      query.replace(/\n/g, ' ').slice(0, 16000),
+      input_type: 'query',
     }),
   });
 
   if (!embeddingRes.ok) {
-    throw new Error(`OpenAI embeddings: ${embeddingRes.status}`);
+    throw new Error(`Voyage AI embeddings: ${embeddingRes.status}`);
   }
 
   const embData   = await embeddingRes.json();
   const embedding = embData.data?.[0]?.embedding;
-  if (!embedding) throw new Error('No se recibió embedding de OpenAI');
+  if (!embedding) throw new Error('No se recibio embedding de Voyage AI');
 
   // 2. Buscar artículos similares via Supabase RPC
   const searchRes = await fetch(

@@ -3,10 +3,16 @@
 -- Ejecutar en: Supabase → SQL Editor
 --
 -- Prerrequisito: extensión pgvector ya activa
+-- Proveedor embeddings: Voyage AI voyage-law-2 (1024 dims)
 -- ================================================
 
 -- Habilitar extensión (idempotente)
 CREATE EXTENSION IF NOT EXISTS vector;
+
+-- ── Si ya creaste la tabla con VECTOR(1536), ejecuta esto primero:
+-- (cambia la columna embedding a 1024 dims para voyage-law-2)
+ALTER TABLE legal_documents DROP COLUMN IF EXISTS embedding;
+ALTER TABLE legal_documents ADD  COLUMN embedding VECTOR(1024);
 
 -- ── Tabla de documentos legales con embeddings ──
 CREATE TABLE IF NOT EXISTS legal_documents (
@@ -16,12 +22,13 @@ CREATE TABLE IF NOT EXISTS legal_documents (
   section      TEXT         DEFAULT '',
   article_num  TEXT         DEFAULT '',
   content      TEXT         NOT NULL,
-  embedding    VECTOR(1536),
+  embedding    VECTOR(1024),          -- voyage-law-2 = 1024 dimensiones
   created_at   TIMESTAMPTZ  DEFAULT NOW()
 );
 
 -- Índice HNSW (mejor recall que ivfflat para este tamaño de dataset)
-CREATE INDEX IF NOT EXISTS idx_legal_docs_embedding
+DROP INDEX IF EXISTS idx_legal_docs_embedding;
+CREATE INDEX idx_legal_docs_embedding
   ON legal_documents
   USING hnsw (embedding vector_cosine_ops)
   WITH (m = 16, ef_construction = 64);
@@ -34,7 +41,7 @@ CREATE INDEX IF NOT EXISTS idx_legal_docs_codigo
 -- Devuelve los artículos más relevantes para un query embedding dado.
 -- Usada desde la Netlify Function via RPC.
 CREATE OR REPLACE FUNCTION match_legal_documents(
-  query_embedding  VECTOR(1536),
+  query_embedding  VECTOR(1024),
   match_threshold  FLOAT   DEFAULT 0.50,
   match_count      INTEGER DEFAULT 6
 )
