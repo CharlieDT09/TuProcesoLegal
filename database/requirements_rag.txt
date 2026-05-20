@@ -1,12 +1,5 @@
 # Tu Proceso Legal - Dependencias para ingesta RAG
 # Instalar: pip install -r requirements_rag.txt
-#
-# IMPORTANTE: Poppler y Tesseract son programas del sistema,
-# no paquetes Python. Instalalos por separado:
-#
-# Poppler: https://github.com/oschwartz10612/poppler-windows/releases
-# Tesseract: https://github.com/UB-Mannheim/tesseract/wiki
-#            Activar idioma Spanish durante la instalacion
 
 # Extraccion de texto (PDF nativo)
 pdfplumber>=0.11.0
@@ -16,8 +9,12 @@ pdf2image>=1.17.0
 pytesseract>=0.3.13
 Pillow>=10.0.0
 
-# Embeddings y base de datos
-openai>=1.40.0
+# Embeddings - Voyage AI (partner oficial de Anthropic)
+# Modelo: voyage-law-2, entrenado en documentos legales, 1024 dims
+# 200M tokens gratis en voyageai.com
+voyageai>=0.2.3
+
+# Base de datos
 supabase>=2.7.0
 
 # Utilidades
