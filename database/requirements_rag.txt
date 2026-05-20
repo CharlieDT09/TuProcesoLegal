@@ -1,35 +1,25 @@
-# ══════════════════════════════════════════════════════════════
-# Tu Proceso Legal — Dependencias para ingesta RAG
+# Tu Proceso Legal - Dependencias para ingesta RAG
 # Instalar: pip install -r requirements_rag.txt
 #
 # IMPORTANTE: Poppler y Tesseract son programas del sistema,
-# no paquetes Python. Instálalos por separado:
+# no paquetes Python. Instalalos por separado:
 #
-# Poppler (convierte páginas PDF a imágenes para OCR):
-#   Windows : https://github.com/oschwartz10612/poppler-windows/releases
-#             o: choco install poppler
-#   macOS   : brew install poppler
-#   Linux   : sudo apt install poppler-utils
-#
-# Tesseract OCR (reconocimiento de texto en imágenes):
-#   Windows : https://github.com/UB-Mannheim/tesseract/wiki
-#             Activar idioma "Spanish" durante la instalación
-#   macOS   : brew install tesseract tesseract-lang
-#   Linux   : sudo apt install tesseract-ocr tesseract-ocr-spa
-# ══════════════════════════════════════════════════════════════
+# Poppler: https://github.com/oschwartz10612/poppler-windows/releases
+# Tesseract: https://github.com/UB-Mannheim/tesseract/wiki
+#            Activar idioma Spanish durante la instalacion
 
-# ── Extracción de texto (PDF nativo) ─────────────────────────
+# Extraccion de texto (PDF nativo)
 pdfplumber>=0.11.0
 
-# ── OCR con Poppler (PDFs escaneados) ────────────────────────
-pdf2image>=1.17.0       # usa Poppler para convertir páginas a imágenes
-pytesseract>=0.3.13     # wrapper Python para Tesseract OCR
-Pillow>=10.0.0          # procesamiento de imágenes (requerido por pytesseract)
+# OCR con Poppler (PDFs escaneados)
+pdf2image>=1.17.0
+pytesseract>=0.3.13
+Pillow>=10.0.0
 
-# ── Embeddings y base de datos ────────────────────────────────
+# Embeddings y base de datos
 openai>=1.40.0
 supabase>=2.7.0
 
-# ── Utilidades ────────────────────────────────────────────────
+# Utilidades
 python-dotenv>=1.0.0
 tqdm>=4.66.0
