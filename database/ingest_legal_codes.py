@@ -65,6 +65,8 @@ USO:
     python ingest_legal_codes.py --no-ocr     # solo pdfplumber, sin OCR
 """
 
+from __future__ import annotations  # compatibilidad Python 3.9+
+
 import os
 import re
 import sys

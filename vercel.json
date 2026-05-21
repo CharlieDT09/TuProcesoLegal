@@ -1,7 +1,41 @@
 {
   "functions": {
-    "api/chat.js": {
-      "maxDuration": 30
+    "api/chat.js":          { "maxDuration": 30 },
+    "api/welcome-email.js": { "maxDuration": 10 }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Frame-Options",           "value": "DENY" },
+        { "key": "X-Content-Type-Options",    "value": "nosniff" },
+        { "key": "X-XSS-Protection",          "value": "1; mode=block" },
+        { "key": "Referrer-Policy",           "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy",        "value": "camera=(), microphone=(), geolocation=()" },
+        { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains; preload" },
+        { "key": "Content-Security-Policy",   "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; connect-src 'self' https://ufnkedficjjvbgsfazka.supabase.co wss://ufnkedficjjvbgsfazka.supabase.co https://api.voyageai.com; img-src 'self' data:; frame-ancestors 'none'" }
+      ]
+    },
+    {
+      "source": "/(.+\\.jpeg|.+\\.png|.+\\.webp|.+\\.ico)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=604800, stale-while-revalidate=86400" }
+      ]
+    },
+    {
+      "source": "/(.+\\.js|.+\\.css)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=600" }
+      ]
+    },
+    {
+      "source": "/(.+\\.html)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
     }
-  }
+  ],
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
 }
