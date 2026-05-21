@@ -42,24 +42,10 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ error: 'Selecciona un código para explorar' });
       }
 
-      // Obtener total de artículos de este código
-      const countRes = await fetch(
-        `${supabaseUrl}/rest/v1/legal_documents?select=id&codigo_name=eq.${encodeURIComponent(codigo_filter)}`,
-        {
-          headers: {
-            'apikey':        supabaseAnon,
-            'Authorization': `Bearer ${supabaseAnon}`,
-            'Prefer':        'count=exact',
-            'Range':         '0-0',
-          },
-        }
-      );
-      const totalCount = parseInt(countRes.headers?.get?.('content-range')?.split('/')?.[1] || '0', 10);
-
       const params = new URLSearchParams({
         select:      'id,codigo_name,section,article_num,content',
         codigo_name: `eq.${codigo_filter}`,
-        limit:       String(limit),
+        limit:       String(limit + 1),   // pedimos 1 extra para saber si hay más
         offset:      String(pageOffset),
         order:       'id.asc',
       });
@@ -72,14 +58,17 @@ module.exports = async function handler(req, res) {
       });
 
       if (!browseRes.ok) throw new Error(`Supabase browse error: ${browseRes.status}`);
-      const articles = await browseRes.json();
+      const allArticles = await browseRes.json();
 
-      const result = articles.map(a => ({ ...a, similarity: null }));
+      // Si trajimos limit+1, hay más páginas
+      const hasMore  = allArticles.length > limit;
+      const articles = hasMore ? allArticles.slice(0, limit) : allArticles;
+      const result   = articles.map(a => ({ ...a, similarity: null }));
+
       return res.status(200).json({
         articles:   result,
         total:      result.length,
-        totalCount,
-        hasMore:    pageOffset + result.length < totalCount,
+        hasMore,
         nextOffset: pageOffset + result.length,
         mode:       'browse',
       });
