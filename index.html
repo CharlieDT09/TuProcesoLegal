@@ -457,8 +457,8 @@
           <span class="jt-card-arrow" aria-hidden="true">→</span>
         </div>
 
-        <!-- Biblioteca Jurídica (próximamente) -->
-        <div class="jt-card" role="button" tabindex="0" aria-label="Biblioteca Jurídica — próximamente">
+        <!-- Biblioteca Jurídica (ACTIVO) -->
+        <div class="jt-card jt-card-live" id="jtBibliotecaCard" role="button" tabindex="0" aria-label="Biblioteca Jurídica — buscar artículos legales">
           <div class="jt-card-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
@@ -467,15 +467,102 @@
           </div>
           <div class="jt-card-info">
             <div class="jt-card-name">Biblioteca Jurídica</div>
-            <div class="jt-card-desc">Accede a los códigos y leyes vigentes de la República de Panamá.</div>
+            <div class="jt-card-desc">Busca artículos en los 17 códigos legales de Panamá.</div>
           </div>
-          <span class="jt-soon-tag" aria-label="Próximamente">Próximamente</span>
+          <span class="jt-card-arrow" aria-hidden="true">→</span>
         </div>
 
       </div><!-- /.jt-list -->
     </aside>
     <div class="jt-backdrop" id="jtBackdrop" aria-hidden="true"></div>
   </div>
+
+  <!-- ══ BIBLIOTECA JURÍDICA — MODAL ══════════════ -->
+  <div class="bib-overlay hidden" id="bibOverlay" role="dialog" aria-modal="true" aria-label="Biblioteca Jurídica">
+    <div class="bib-modal">
+
+      <!-- Header sticky -->
+      <div class="bib-header">
+        <div class="bib-header-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+          <span>Biblioteca Jurídica</span>
+          <span class="bib-header-sub">17 códigos · República de Panamá</span>
+        </div>
+        <button class="bib-close" id="bibClose" aria-label="Cerrar Biblioteca">✕</button>
+      </div>
+
+      <!-- Buscador -->
+      <div class="bib-search-wrap">
+        <svg class="bib-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input
+          type="search"
+          id="bibSearchInput"
+          class="bib-search-input"
+          placeholder="Busca un artículo, derecho o tema legal…"
+          autocomplete="off"
+          spellcheck="false"
+          maxlength="200"
+        />
+        <button class="bib-search-clear hidden" id="bibSearchClear" aria-label="Limpiar búsqueda">✕</button>
+      </div>
+
+      <!-- Filtros por código -->
+      <div class="bib-filters" id="bibFilters" role="group" aria-label="Filtrar por código legal">
+        <button class="bib-chip active" data-code="Todos">Todos</button>
+        <button class="bib-chip" data-code="Constitución Política de Panamá">Constitución</button>
+        <button class="bib-chip" data-code="Código de Trabajo">Trabajo</button>
+        <button class="bib-chip" data-code="Código Civil de Panamá">Civil</button>
+        <button class="bib-chip" data-code="Código de la Familia">Familia</button>
+        <button class="bib-chip" data-code="Código Penal">Penal</button>
+        <button class="bib-chip" data-code="Código Judicial">Judicial</button>
+        <button class="bib-chip" data-code="Código de Comercio de Panamá">Comercio</button>
+        <button class="bib-chip" data-code="Código Fiscal">Fiscal</button>
+        <button class="bib-chip" data-code="Código Agrario de Panamá">Agrario</button>
+        <button class="bib-chip" data-code="Código Procesal Penal">Proc. Penal</button>
+        <button class="bib-chip" data-code="Código Procesal Civil (Ley 402 de 2023)">Proc. Civil</button>
+        <button class="bib-chip" data-code="Código de Ética del Abogado">Ética</button>
+      </div>
+
+      <!-- Resultados -->
+      <div class="bib-body" id="bibBody">
+
+        <!-- Estado inicial -->
+        <div class="bib-empty" id="bibEmpty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+          <p>Escribe un tema, derecho o artículo para buscar en los códigos legales de Panamá.</p>
+          <span>Ej: "indemnización por despido", "divorcio por mutuo acuerdo", "arrendamiento"</span>
+        </div>
+
+        <!-- Estado cargando -->
+        <div class="bib-loading hidden" id="bibLoading">
+          <div class="bib-spinner"></div>
+          <p>Buscando en la base de datos legal…</p>
+        </div>
+
+        <!-- Sin resultados -->
+        <div class="bib-no-results hidden" id="bibNoResults">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
+          <p>No se encontraron artículos relacionados.</p>
+          <span>Intenta con términos más generales o cambia el filtro de código.</span>
+        </div>
+
+        <!-- Lista de artículos -->
+        <div class="bib-results hidden" id="bibResults"></div>
+
+      </div><!-- /.bib-body -->
+    </div><!-- /.bib-modal -->
+  </div><!-- /.bib-overlay -->
 
   <!-- ══ CAJÓN DE HISTORIAL DE CONSULTAS ══════════ -->
   <div class="history-overlay hidden" id="historyOverlay" role="dialog" aria-modal="true" aria-label="Mis consultas guardadas">

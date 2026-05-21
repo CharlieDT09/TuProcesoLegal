@@ -1001,3 +1001,190 @@ function scrollToBottom() {
     }
   });
 }());
+
+
+// ════════════════════════════════════════════════════════════════
+// BIBLIOTECA JURÍDICA — JuriTool
+// ════════════════════════════════════════════════════════════════
+(function BibliotecaJuridica() {
+  const overlay     = document.getElementById('bibOverlay');
+  const closeBtn    = document.getElementById('bibClose');
+  const searchInput = document.getElementById('bibSearchInput');
+  const searchClear = document.getElementById('bibSearchClear');
+  const filtersEl   = document.getElementById('bibFilters');
+  const emptyEl     = document.getElementById('bibEmpty');
+  const loadingEl   = document.getElementById('bibLoading');
+  const noResultsEl = document.getElementById('bibNoResults');
+  const resultsEl   = document.getElementById('bibResults');
+  const bibCard     = document.getElementById('jtBibliotecaCard');
+
+  if (!overlay || !bibCard) return;
+
+  let activeCode    = 'Todos';
+  let searchTimer   = null;
+  let lastQuery     = '';
+
+  // ── Abrir / Cerrar ────────────────────────────
+  function openBib() {
+    overlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => searchInput.focus(), 100);
+  }
+
+  function closeBib() {
+    overlay.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  bibCard.addEventListener('click', () => {
+    // Cerrar el sidebar de JuriTools primero
+    const jtOverlay = document.getElementById('jtOverlay');
+    if (jtOverlay) jtOverlay.classList.add('hidden');
+    openBib();
+  });
+  bibCard.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); bibCard.click(); }
+  });
+
+  closeBtn.addEventListener('click', closeBib);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeBib(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !overlay.classList.contains('hidden')) closeBib();
+  });
+
+  // ── Filtros ───────────────────────────────────
+  filtersEl.addEventListener('click', e => {
+    const chip = e.target.closest('.bib-chip');
+    if (!chip) return;
+    filtersEl.querySelectorAll('.bib-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    activeCode = chip.dataset.code;
+    if (lastQuery.trim().length >= 2) triggerSearch(lastQuery);
+  });
+
+  // ── Input de búsqueda ─────────────────────────
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value;
+    searchClear.classList.toggle('hidden', q.length === 0);
+    clearTimeout(searchTimer);
+    if (q.trim().length < 2) {
+      showState('empty');
+      return;
+    }
+    showState('loading');
+    searchTimer = setTimeout(() => triggerSearch(q), 420);
+  });
+
+  searchClear.addEventListener('click', () => {
+    searchInput.value = '';
+    searchClear.classList.add('hidden');
+    showState('empty');
+    searchInput.focus();
+  });
+
+  // ── Búsqueda ──────────────────────────────────
+  async function triggerSearch(query) {
+    lastQuery = query;
+    showState('loading');
+    try {
+      const res = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query:        query.trim(),
+          match_count:  12,
+          codigo_filter: activeCode,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error de búsqueda');
+
+      const articles = data.articles || [];
+      if (articles.length === 0) {
+        showState('no-results');
+      } else {
+        renderResults(articles);
+        showState('results');
+      }
+    } catch (err) {
+      console.error('[Biblioteca]', err);
+      showState('no-results');
+    }
+  }
+
+  // ── Render de artículos ───────────────────────
+  const PREVIEW_CHARS = 280;
+
+  function renderResults(articles) {
+    resultsEl.innerHTML = '';
+    articles.forEach(art => {
+      const full    = (art.content || '').trim();
+      const preview = full.length > PREVIEW_CHARS
+        ? full.slice(0, PREVIEW_CHARS) + '…'
+        : full;
+      const hasMore = full.length > PREVIEW_CHARS;
+
+      const card = document.createElement('div');
+      card.className = 'bib-card';
+
+      const similarity = art.similarity != null
+        ? `<span class="bib-similarity">${(art.similarity * 100).toFixed(0)}% relevancia</span>`
+        : '';
+
+      const section = art.section
+        ? `<span class="bib-section">${escapeHtml(art.section)}</span>`
+        : '';
+
+      const articleNum = art.article_num
+        ? `<span class="bib-article-num">${escapeHtml(art.article_num)}</span>`
+        : '';
+
+      card.innerHTML = `
+        <div class="bib-card-meta">
+          <span class="bib-badge">${escapeHtml(art.codigo_name || '')}</span>
+          ${articleNum}
+          ${section}
+          ${similarity}
+        </div>
+        <p class="bib-card-content" data-full="${escapeAttr(full)}" data-preview="${escapeAttr(preview)}">${escapeHtml(preview)}</p>
+        ${hasMore ? '<button class="bib-toggle-btn" aria-label="Ver artículo completo">Ver artículo completo ↓</button>' : ''}
+      `;
+
+      if (hasMore) {
+        const btn     = card.querySelector('.bib-toggle-btn');
+        const content = card.querySelector('.bib-card-content');
+        let expanded  = false;
+        btn.addEventListener('click', () => {
+          expanded = !expanded;
+          content.textContent = expanded ? content.dataset.full : content.dataset.preview + '…';
+          content.classList.toggle('expanded', expanded);
+          btn.textContent = expanded ? 'Mostrar menos ↑' : 'Ver artículo completo ↓';
+        });
+      }
+
+      resultsEl.appendChild(card);
+    });
+  }
+
+  // ── Estados de UI ─────────────────────────────
+  function showState(state) {
+    emptyEl.classList.add('hidden');
+    loadingEl.classList.add('hidden');
+    noResultsEl.classList.add('hidden');
+    resultsEl.classList.add('hidden');
+    if (state === 'empty')      emptyEl.classList.remove('hidden');
+    if (state === 'loading')    loadingEl.classList.remove('hidden');
+    if (state === 'no-results') noResultsEl.classList.remove('hidden');
+    if (state === 'results')    resultsEl.classList.remove('hidden');
+  }
+
+  // ── Helpers ───────────────────────────────────
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, c =>
+      ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])
+    );
+  }
+  function escapeAttr(str) {
+    return String(str).replace(/"/g, '&quot;');
+  }
+}());
