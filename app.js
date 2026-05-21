@@ -1059,7 +1059,17 @@ function scrollToBottom() {
     filtersEl.querySelectorAll('.bib-chip').forEach(c => c.classList.remove('active'));
     chip.classList.add('active');
     activeCode = chip.dataset.code;
-    if (lastQuery.trim().length >= 2) triggerSearch(lastQuery);
+
+    if (lastQuery.trim().length >= 2) {
+      // Hay búsqueda activa → re-buscar con filtro
+      triggerSearch(lastQuery);
+    } else if (activeCode !== 'Todos') {
+      // Sin búsqueda → modo browse: mostrar artículos del código
+      triggerBrowse(activeCode);
+    } else {
+      // "Todos" sin búsqueda → volver a estado vacío
+      showState('empty');
+    }
   });
 
   // ── Input de búsqueda ─────────────────────────
@@ -1068,7 +1078,12 @@ function scrollToBottom() {
     searchClear.classList.toggle('hidden', q.length === 0);
     clearTimeout(searchTimer);
     if (q.trim().length < 2) {
-      showState('empty');
+      // Si hay un código activo, mostrar browse
+      if (activeCode !== 'Todos') {
+        triggerBrowse(activeCode);
+      } else {
+        showState('empty');
+      }
       return;
     }
     showState('loading');
@@ -1077,12 +1092,45 @@ function scrollToBottom() {
 
   searchClear.addEventListener('click', () => {
     searchInput.value = '';
+    lastQuery = '';
     searchClear.classList.add('hidden');
-    showState('empty');
+    if (activeCode !== 'Todos') {
+      triggerBrowse(activeCode);
+    } else {
+      showState('empty');
+    }
     searchInput.focus();
   });
 
-  // ── Búsqueda ──────────────────────────────────
+  // ── Browse por código (sin query) ─────────────
+  async function triggerBrowse(codigo) {
+    showState('loading');
+    try {
+      const res = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode:         'browse',
+          match_count:  12,
+          codigo_filter: codigo,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error');
+      const articles = data.articles || [];
+      if (articles.length === 0) {
+        showState('no-results');
+      } else {
+        renderResults(articles);
+        showState('results');
+      }
+    } catch (err) {
+      console.error('[Biblioteca browse]', err);
+      showState('no-results');
+    }
+  }
+
+  // ── Búsqueda semántica ────────────────────────
   async function triggerSearch(query) {
     lastQuery = query;
     showState('loading');
@@ -1091,6 +1139,7 @@ function scrollToBottom() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          mode:         'search',
           query:        query.trim(),
           match_count:  12,
           codigo_filter: activeCode,
