@@ -349,7 +349,7 @@ async function handleRegister() {
   }
 
   // Enviar email de bienvenida (no bloqueante)
-  fetch('/.netlify/functions/welcome-email', {
+  fetch('/api/welcome-email', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, name }),
@@ -788,7 +788,7 @@ async function sendMessage(text) {
   setLoading(true);
 
   try {
-    const response = await fetch('/.netlify/functions/chat', {
+    const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages: history }),
