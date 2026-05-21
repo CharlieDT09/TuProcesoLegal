@@ -1023,6 +1023,9 @@ function scrollToBottom() {
   let activeCode    = 'Todos';
   let searchTimer   = null;
   let lastQuery     = '';
+  let browseOffset  = 0;
+  let browseHasMore = false;
+  let browseCodigo  = '';
 
   // ── Abrir / Cerrar ────────────────────────────
   function openBib() {
@@ -1103,30 +1106,50 @@ function scrollToBottom() {
   });
 
   // ── Browse por código (sin query) ─────────────
-  async function triggerBrowse(codigo) {
-    showState('loading');
+  async function triggerBrowse(codigo, appendMode = false) {
+    if (!appendMode) {
+      browseOffset  = 0;
+      browseHasMore = false;
+      browseCodigo  = codigo;
+      showState('loading');
+    } else {
+      // Deshabilitar botón "Cargar más" mientras carga
+      const loadMoreBtn = document.getElementById('bibLoadMore');
+      if (loadMoreBtn) loadMoreBtn.disabled = true;
+    }
+
     try {
       const res = await fetch('/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          mode:         'browse',
-          match_count:  12,
+          mode:          'browse',
+          match_count:   20,
           codigo_filter: codigo,
+          offset:        browseOffset,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error');
-      const articles = data.articles || [];
-      if (articles.length === 0) {
+
+      const articles   = data.articles || [];
+      browseHasMore    = data.hasMore || false;
+      browseOffset     = data.nextOffset || (browseOffset + articles.length);
+
+      if (articles.length === 0 && !appendMode) {
         showState('no-results');
       } else {
-        renderResults(articles);
+        if (!appendMode) {
+          renderResults(articles, data.totalCount);
+        } else {
+          appendResults(articles);
+        }
+        updateLoadMoreBtn();
         showState('results');
       }
     } catch (err) {
       console.error('[Biblioteca browse]', err);
-      showState('no-results');
+      if (!appendMode) showState('no-results');
     }
   }
 
@@ -1164,55 +1187,66 @@ function scrollToBottom() {
   // ── Render de artículos ───────────────────────
   const PREVIEW_CHARS = 280;
 
-  function renderResults(articles) {
+  function renderResults(articles, totalCount) {
     resultsEl.innerHTML = '';
-    articles.forEach(art => {
-      const full    = (art.content || '').trim();
-      const preview = full.length > PREVIEW_CHARS
-        ? full.slice(0, PREVIEW_CHARS) + '…'
-        : full;
-      const hasMore = full.length > PREVIEW_CHARS;
+    // Mostrar contador si hay totalCount
+    if (totalCount > 0) {
+      const counter = document.createElement('p');
+      counter.className = 'bib-results-count';
+      counter.textContent = `${totalCount} artículos en este código`;
+      resultsEl.appendChild(counter);
+    }
+    articles.forEach(art => resultsEl.appendChild(buildCard(art)));
+  }
 
-      const card = document.createElement('div');
-      card.className = 'bib-card';
+  function buildCard(art) {
+    const full    = (art.content || '').trim();
+    const preview = full.length > PREVIEW_CHARS ? full.slice(0, PREVIEW_CHARS) + '…' : full;
+    const hasMore = full.length > PREVIEW_CHARS;
+    const card    = document.createElement('div');
+    card.className = 'bib-card';
+    const similarity  = art.similarity != null ? `<span class="bib-similarity">${(art.similarity * 100).toFixed(0)}% relevancia</span>` : '';
+    const section     = art.section    ? `<span class="bib-section">${escapeHtml(art.section)}</span>` : '';
+    const articleNum  = art.article_num ? `<span class="bib-article-num">${escapeHtml(art.article_num)}</span>` : '';
+    card.innerHTML = `
+      <div class="bib-card-meta">
+        <span class="bib-badge">${escapeHtml(art.codigo_name || '')}</span>
+        ${articleNum}${section}${similarity}
+      </div>
+      <p class="bib-card-content" data-full="${escapeAttr(full)}" data-preview="${escapeAttr(preview)}">${escapeHtml(preview)}</p>
+      ${hasMore ? '<button class="bib-toggle-btn" aria-label="Ver artículo completo">Ver artículo completo ↓</button>' : ''}
+    `;
+    if (hasMore) {
+      const btn = card.querySelector('.bib-toggle-btn');
+      const content = card.querySelector('.bib-card-content');
+      let expanded = false;
+      btn.addEventListener('click', () => {
+        expanded = !expanded;
+        content.textContent = expanded ? content.dataset.full : content.dataset.preview + '…';
+        content.classList.toggle('expanded', expanded);
+        btn.textContent = expanded ? 'Mostrar menos ↑' : 'Ver artículo completo ↓';
+      });
+    }
+    return card;
+  }
 
-      const similarity = art.similarity != null
-        ? `<span class="bib-similarity">${(art.similarity * 100).toFixed(0)}% relevancia</span>`
-        : '';
+  function appendResults(articles) {
+    // Eliminar botón anterior si existe
+    const oldBtn = document.getElementById('bibLoadMore');
+    if (oldBtn) oldBtn.remove();
+    articles.forEach(art => resultsEl.appendChild(buildCard(art)));
+  }
 
-      const section = art.section
-        ? `<span class="bib-section">${escapeHtml(art.section)}</span>`
-        : '';
-
-      const articleNum = art.article_num
-        ? `<span class="bib-article-num">${escapeHtml(art.article_num)}</span>`
-        : '';
-
-      card.innerHTML = `
-        <div class="bib-card-meta">
-          <span class="bib-badge">${escapeHtml(art.codigo_name || '')}</span>
-          ${articleNum}
-          ${section}
-          ${similarity}
-        </div>
-        <p class="bib-card-content" data-full="${escapeAttr(full)}" data-preview="${escapeAttr(preview)}">${escapeHtml(preview)}</p>
-        ${hasMore ? '<button class="bib-toggle-btn" aria-label="Ver artículo completo">Ver artículo completo ↓</button>' : ''}
-      `;
-
-      if (hasMore) {
-        const btn     = card.querySelector('.bib-toggle-btn');
-        const content = card.querySelector('.bib-card-content');
-        let expanded  = false;
-        btn.addEventListener('click', () => {
-          expanded = !expanded;
-          content.textContent = expanded ? content.dataset.full : content.dataset.preview + '…';
-          content.classList.toggle('expanded', expanded);
-          btn.textContent = expanded ? 'Mostrar menos ↑' : 'Ver artículo completo ↓';
-        });
-      }
-
-      resultsEl.appendChild(card);
-    });
+  function updateLoadMoreBtn() {
+    const existing = document.getElementById('bibLoadMore');
+    if (existing) existing.remove();
+    if (!browseHasMore) return;
+    const btn = document.createElement('button');
+    btn.id        = 'bibLoadMore';
+    btn.className = 'bib-load-more';
+    btn.textContent = 'Cargar más artículos ↓';
+    btn.addEventListener('click', () => triggerBrowse(browseCodigo, true));
+    resultsEl.appendChild(btn);
   }
 
   // ── Estados de UI ─────────────────────────────

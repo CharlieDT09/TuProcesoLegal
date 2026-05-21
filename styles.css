@@ -2462,3 +2462,38 @@ html, body {
   .bib-body { padding: 8px 16px 20px; }
   .bib-card { padding: 14px 16px; }
 }
+
+/* ── Biblioteca: contador y cargar más ────────── */
+.bib-results-count {
+  font-size: 11px;
+  color: #3a4e62;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(192,157,60,0.08);
+}
+
+.bib-load-more {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(192,157,60,0.06);
+  border: 1px solid rgba(192,157,60,0.2);
+  border-radius: 10px;
+  color: #c09d3c;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  text-align: center;
+}
+.bib-load-more:hover {
+  background: rgba(192,157,60,0.12);
+  border-color: rgba(192,157,60,0.4);
+}
+.bib-load-more:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

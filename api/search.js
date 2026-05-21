@@ -20,7 +20,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST')    return res.status(405).json({ error: 'Método no permitido' });
 
-  const { query, match_count = RAG_MATCH_COUNT, codigo_filter, mode = 'search' } = req.body || {};
+  const { query, match_count = RAG_MATCH_COUNT, codigo_filter, mode = 'search', offset = 0 } = req.body || {};
 
   const supabaseUrl  = process.env.SUPABASE_URL;
   const supabaseAnon = process.env.SUPABASE_ANON_KEY;
@@ -30,7 +30,9 @@ module.exports = async function handler(req, res) {
     return res.status(503).json({ error: 'Servicio no configurado' });
   }
 
-  const limit = Math.min(Number(match_count) || RAG_MATCH_COUNT, 20);
+  const PAGE_SIZE = 20;
+  const limit     = Math.min(Number(match_count) || PAGE_SIZE, 50);
+  const pageOffset = Math.max(Number(offset) || 0, 0);
 
   try {
 
@@ -40,10 +42,25 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ error: 'Selecciona un código para explorar' });
       }
 
+      // Obtener total de artículos de este código
+      const countRes = await fetch(
+        `${supabaseUrl}/rest/v1/legal_documents?select=id&codigo_name=eq.${encodeURIComponent(codigo_filter)}`,
+        {
+          headers: {
+            'apikey':        supabaseAnon,
+            'Authorization': `Bearer ${supabaseAnon}`,
+            'Prefer':        'count=exact',
+            'Range':         '0-0',
+          },
+        }
+      );
+      const totalCount = parseInt(countRes.headers?.get?.('content-range')?.split('/')?.[1] || '0', 10);
+
       const params = new URLSearchParams({
-        select:     'id,codigo_name,section,article_num,content',
+        select:      'id,codigo_name,section,article_num,content',
         codigo_name: `eq.${codigo_filter}`,
         limit:       String(limit),
+        offset:      String(pageOffset),
         order:       'id.asc',
       });
 
@@ -57,9 +74,15 @@ module.exports = async function handler(req, res) {
       if (!browseRes.ok) throw new Error(`Supabase browse error: ${browseRes.status}`);
       const articles = await browseRes.json();
 
-      // Añadir similarity null para mantener estructura uniforme
       const result = articles.map(a => ({ ...a, similarity: null }));
-      return res.status(200).json({ articles: result, total: result.length, mode: 'browse' });
+      return res.status(200).json({
+        articles:   result,
+        total:      result.length,
+        totalCount,
+        hasMore:    pageOffset + result.length < totalCount,
+        nextOffset: pageOffset + result.length,
+        mode:       'browse',
+      });
     }
 
     // ── MODO SEARCH: búsqueda semántica ───────────
