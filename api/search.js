@@ -74,6 +74,35 @@ module.exports = async function handler(req, res) {
       });
     }
 
+    // ── MODO ARTICLE LOOKUP: búsqueda por número exacto ──
+    // Detecta patrones como "articulo 403", "art. 15", "artículo 1234"
+    const articleMatch = query.trim().match(/art[íi]culo?\.?\s*(\d+[\w\-]*)/i);
+    if (articleMatch) {
+      const artNum = articleMatch[1];
+      const qs = new URLSearchParams({
+        select:      'id,codigo_name,section,article_num,content',
+        article_num: `ilike.*${artNum}*`,
+        limit:       String(limit),
+        order:       'id.asc',
+      });
+      if (codigo_filter && codigo_filter !== 'Todos') {
+        qs.set('codigo_name', `eq.${codigo_filter}`);
+      }
+      const artRes = await fetch(`${supabaseUrl}/rest/v1/legal_documents?${qs}`, {
+        headers: { 'apikey': supabaseAnon, 'Authorization': `Bearer ${supabaseAnon}` },
+      });
+      if (!artRes.ok) throw new Error(`Supabase article lookup: ${artRes.status}`);
+      const artRows = await artRes.json();
+      if (artRows.length > 0) {
+        return res.status(200).json({
+          articles: artRows.map(a => ({ ...a, similarity: null })),
+          total:    artRows.length,
+          mode:     'article_lookup',
+        });
+      }
+      // Si no encontró por número, cae a búsqueda semántica
+    }
+
     // ── MODO SEARCH: búsqueda semántica ───────────
     if (!voyageKey) {
       return res.status(503).json({ error: 'Servicio de búsqueda no configurado' });
