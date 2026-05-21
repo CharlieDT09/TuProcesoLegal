@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,700;6..96,800&family=Inter:wght@400;500;600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=5" />
+  <link rel="stylesheet" href="styles.css?v=6" />
   <!-- CSS crítico: evita flash de contenido sin estilo antes de que cargue styles.css -->
   <style>
     html, body { background: #070c18; }
@@ -20,8 +20,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js" defer></script>
-  <script src="app.js?v=5" defer></script>
-  <script src="quiz.js?v=5" defer></script>
+  <script src="app.js?v=6" defer></script>
+  <script src="quiz.js?v=6" defer></script>
 </head>
 <body>
 
@@ -341,6 +341,21 @@
         <p class="auth-terms">
           Al registrarte aceptas nuestra <a href="#" class="auth-link">Política de Privacidad</a>
         </p>
+      </div>
+
+      <!-- Panel: Nueva contraseña (recovery) -->
+      <div class="auth-panel hidden" id="panelReset" role="tabpanel">
+        <p class="auth-reset-info">Ingresa tu nueva contraseña para <strong id="resetEmailLabel"></strong></p>
+        <div class="auth-field">
+          <label for="resetPassword">Nueva contraseña</label>
+          <input type="password" id="resetPassword" placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
+        </div>
+        <div class="auth-field">
+          <label for="resetConfirm">Confirmar contraseña</label>
+          <input type="password" id="resetConfirm" placeholder="Repite tu contraseña" autocomplete="new-password" />
+        </div>
+        <div class="auth-message hidden" id="resetMessage" role="alert"></div>
+        <button class="auth-submit" id="resetSubmit">Guardar nueva contraseña</button>
       </div>
 
       <!-- Opción "Más tarde" (solo visible cuando el modal se abre desde "Iniciar consulta") -->

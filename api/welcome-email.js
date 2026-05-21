@@ -3,7 +3,7 @@
 // Vercel Function: /api/welcome-email
 // ================================================
 
-const FROM_ADDRESS = 'Tu Proceso Legal IA <onboarding@resend.dev>';
+const FROM_ADDRESS = 'Tu Proceso Legal IA <noreply@tuprocesoia.com>';
 const FROM_NAME    = 'Tu Proceso Legal IA';
 
 module.exports = async function handler(req, res) {

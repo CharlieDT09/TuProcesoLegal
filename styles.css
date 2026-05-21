@@ -2497,3 +2497,14 @@ html, body {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ── Auth: panel recuperar contraseña ─────────── */
+.auth-reset-info {
+  font-size: 13px;
+  color: #7a8fa8;
+  margin: 0 0 20px;
+  line-height: 1.6;
+}
+.auth-reset-info strong {
+  color: #c09d3c;
+}

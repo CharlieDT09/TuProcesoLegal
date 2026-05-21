@@ -172,6 +172,11 @@ async function initAuth() {
   }
 
   sb.auth.onAuthStateChange((_event, session) => {
+    if (_event === 'PASSWORD_RECOVERY') {
+      // Usuario llegó desde el link de recuperación → mostrar form de nueva contraseña
+      openResetPasswordPanel(session?.user?.email || '');
+      return;
+    }
     currentUser = session?.user || null;
     updateAuthUI();
   });
@@ -394,6 +399,66 @@ async function handleForgotPassword() {
     showAuthMessage(loginMessage, 'Te enviamos un correo para restablecer tu contraseña.', 'info');
   }
 }
+
+// ── Panel de nueva contraseña (recovery) ─────────
+const panelReset     = document.getElementById('panelReset');
+const resetPassword  = document.getElementById('resetPassword');
+const resetConfirm   = document.getElementById('resetConfirm');
+const resetMessage   = document.getElementById('resetMessage');
+const resetSubmit    = document.getElementById('resetSubmit');
+const resetEmailLbl  = document.getElementById('resetEmailLabel');
+
+function openResetPasswordPanel(email) {
+  // Ocultar tabs y otros paneles, mostrar solo el panel de reset
+  authOverlay.classList.remove('hidden');
+  document.getElementById('tabLogin').closest('.auth-tabs').classList.add('hidden');
+  document.getElementById('googleAuthBtn').classList.add('hidden');
+  panelLogin.classList.add('hidden');
+  panelRegister.classList.add('hidden');
+  panelReset.classList.remove('hidden');
+  document.getElementById('authSkipRow').classList.add('hidden');
+  if (resetEmailLbl) resetEmailLbl.textContent = email;
+}
+
+async function handleSetNewPassword() {
+  const pwd     = resetPassword.value;
+  const confirm = resetConfirm.value;
+
+  if (!pwd || pwd.length < 8) {
+    showAuthMessage(resetMessage, 'La contraseña debe tener al menos 8 caracteres.');
+    return;
+  }
+  if (pwd !== confirm) {
+    showAuthMessage(resetMessage, 'Las contraseñas no coinciden.');
+    return;
+  }
+
+  resetSubmit.disabled = true;
+  resetSubmit.textContent = 'Guardando…';
+
+  const sb = getSupabase();
+  const { error } = await sb.auth.updateUser({ password: pwd });
+
+  if (error) {
+    showAuthMessage(resetMessage, 'Error al actualizar la contraseña. Intenta de nuevo.');
+    resetSubmit.disabled = false;
+    resetSubmit.textContent = 'Guardar nueva contraseña';
+  } else {
+    showAuthMessage(resetMessage, '✓ Contraseña actualizada correctamente.', 'success');
+    resetSubmit.textContent = '✓ Listo';
+    // Restaurar UI del modal y cerrar tras 2 segundos
+    setTimeout(() => {
+      document.getElementById('tabLogin').closest('.auth-tabs').classList.remove('hidden');
+      document.getElementById('googleAuthBtn').classList.remove('hidden');
+      panelReset.classList.add('hidden');
+      closeAuthModal();
+    }, 2000);
+  }
+}
+
+resetSubmit.addEventListener('click', handleSetNewPassword);
+resetPassword.addEventListener('keydown', e => { if (e.key === 'Enter') resetConfirm.focus(); });
+resetConfirm.addEventListener('keydown',  e => { if (e.key === 'Enter') handleSetNewPassword(); });
 
 // ── Cerrar sesión ─────────────────────────────────
 async function handleSignOut() {
