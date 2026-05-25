@@ -2,7 +2,8 @@
   "functions": {
     "api/chat.js":          { "maxDuration": 30 },
     "api/welcome-email.js": { "maxDuration": 10 },
-    "api/search.js":        { "maxDuration": 20 }
+    "api/search.js":        { "maxDuration": 20 },
+    "api/escrito.js":       { "maxDuration": 30 }
   },
   "headers": [
     {

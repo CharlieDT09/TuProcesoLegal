@@ -2508,3 +2508,400 @@ html, body {
 .auth-reset-info strong {
   color: #c09d3c;
 }
+
+/* ══ TuEscritoIA — Modal ═══════════════════════ */
+
+.escrito-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  backdrop-filter: blur(4px);
+}
+
+.escrito-modal {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 92vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(192, 157, 60, 0.08);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(192,157,60,0.2) transparent;
+}
+
+/* ── Header ──────────────────────────────────── */
+.escrito-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 16px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg2);
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.escrito-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 0;
+}
+
+.escrito-header-title svg {
+  width: 20px;
+  height: 20px;
+  stroke: var(--gold);
+  flex-shrink: 0;
+}
+
+.escrito-header-sub {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.escrito-close {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.18s, background 0.18s;
+  flex-shrink: 0;
+}
+.escrito-close:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+
+/* ── Pasos ───────────────────────────────────── */
+.escrito-step {
+  padding: 24px 22px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.escrito-step-desc {
+  font-size: 14px;
+  color: var(--muted);
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+/* ── Grid de categorías (paso 1) ─────────────── */
+.escrito-cats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.escrito-cat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 16px 16px 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, transform 0.18s;
+  user-select: none;
+}
+
+.escrito-cat-card:hover {
+  background: var(--gold-dim);
+  border-color: rgba(192, 157, 60, 0.45);
+  transform: translateY(-2px);
+}
+
+.escrito-cat-card:active { transform: translateY(0); }
+
+.escrito-cat-emoji {
+  font-size: 22px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.escrito-cat-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.escrito-cat-desc {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* ── Formulario (paso 2) ─────────────────────── */
+.escrito-back {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-family: var(--sans);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.18s;
+  align-self: flex-start;
+}
+.escrito-back:hover { color: var(--text); }
+
+.escrito-form-title {
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
+
+.escrito-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.escrito-label {
+  font-size: 13px;
+  color: #b0c4d8;
+  font-weight: 500;
+}
+
+.escrito-input,
+.escrito-select,
+.escrito-textarea {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(192, 157, 60, 0.18);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color 0.18s, background 0.18s;
+  width: 100%;
+}
+
+.escrito-input::placeholder,
+.escrito-textarea::placeholder { color: var(--dim); }
+
+.escrito-input:focus,
+.escrito-select:focus,
+.escrito-textarea:focus {
+  border-color: rgba(192, 157, 60, 0.5);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.escrito-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%237a8fa8' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+
+.escrito-select option {
+  background: #0b1425;
+  color: var(--text);
+}
+
+.escrito-textarea { resize: vertical; min-height: 80px; }
+
+.escrito-form-error {
+  background: var(--error);
+  border: 1px solid var(--error-border);
+  border-radius: 10px;
+  color: var(--error-text);
+  font-size: 13px;
+  padding: 10px 14px;
+}
+
+.escrito-generate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #c09d3c 0%, #ddb94e 100%);
+  border: none;
+  border-radius: 12px;
+  color: #070c18;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 700;
+  padding: 14px 24px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: opacity 0.18s, transform 0.18s;
+  letter-spacing: 0.01em;
+}
+.escrito-generate-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+.escrito-generate-btn:active { transform: translateY(0); }
+
+/* ── Generando (paso 3) ──────────────────────── */
+.escrito-generating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.escrito-spinner {
+  width: 44px;
+  height: 44px;
+  border: 3px solid rgba(192, 157, 60, 0.15);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: escritoSpin 0.9s linear infinite;
+}
+
+@keyframes escritoSpin {
+  to { transform: rotate(360deg); }
+}
+
+.escrito-generating-title {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.escrito-generating-sub {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ── Resultado (paso 4) ──────────────────────── */
+.escrito-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.escrito-result-tag {
+  font-size: 12px;
+  color: #6dbf7e;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.escrito-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.escrito-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 12px;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s;
+  white-space: nowrap;
+}
+.escrito-action-btn:hover {
+  background: var(--gold-dim);
+  border-color: rgba(192, 157, 60, 0.45);
+}
+
+.escrito-doc {
+  background: #f5f2ea;
+  color: #1a1510;
+  font-family: 'Times New Roman', Times, Georgia, serif;
+  font-size: 13px;
+  line-height: 1.7;
+  padding: 28px 30px;
+  border-radius: 8px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 48vh;
+  overflow-y: auto;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.35);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.15) transparent;
+}
+
+.escrito-new-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 13px;
+  padding: 10px 18px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
+  align-self: flex-start;
+}
+.escrito-new-btn:hover {
+  background: var(--gold-dim);
+  border-color: rgba(192,157,60,0.4);
+  color: var(--text);
+}
+
+.escrito-result-disclaimer {
+  font-size: 11px;
+  color: var(--dim);
+  font-style: italic;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* ── Responsive ──────────────────────────────── */
+@media (max-width: 520px) {
+  .escrito-modal {
+    max-height: 96vh;
+    border-radius: 14px 14px 0 0;
+    align-self: flex-end;
+    margin: 0 0 0;
+  }
+  .escrito-overlay { padding: 0; align-items: flex-end; }
+  .escrito-cats { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .escrito-cat-card { padding: 12px 12px 10px; }
+  .escrito-cat-emoji { font-size: 18px; }
+  .escrito-cat-label { font-size: 13px; }
+  .escrito-doc { max-height: 38vh; padding: 20px 18px; }
+  .escrito-actions { gap: 4px; }
+  .escrito-action-btn { font-size: 11px; padding: 6px 9px; }
+}

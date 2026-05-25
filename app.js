@@ -1069,6 +1069,433 @@ function scrollToBottom() {
 
 
 // ════════════════════════════════════════════════════════════════
+// TUESCRITOIA — JuriTool
+// ════════════════════════════════════════════════════════════════
+(function TuEscritoIA() {
+
+  // ── Categorías y campos ────────────────────────
+  const CATEGORIAS = {
+    laboral: {
+      emoji: '👔', label: 'Laboral',
+      desc: 'Contratos, despidos, renuncias, acuerdos laborales',
+      tipos: ['Carta de Despido', 'Carta de Renuncia', 'Acuerdo de Terminación Mutua', 'Contrato de Trabajo', 'Memorando Laboral', 'Otro tipo de escrito laboral'],
+      campos: [
+        { id: 'tipo_escrito',       label: 'Tipo de escrito',                              type: 'select', req: true },
+        { id: 'nombre_trabajador',  label: 'Nombre completo del trabajador',               type: 'text',   req: true },
+        { id: 'nombre_empleador',   label: 'Nombre de la empresa / empleador',             type: 'text',   req: true },
+        { id: 'cargo',              label: 'Cargo del trabajador',                         type: 'text',   req: true },
+        { id: 'fecha_inicio',       label: 'Fecha de inicio de la relación laboral',       type: 'text',   ph: 'Ej: 1 de enero de 2022' },
+        { id: 'motivo',             label: 'Motivo o circunstancias',                      type: 'textarea', ph: 'Describe el motivo, causa o situación…' },
+        { id: 'ciudad',             label: 'Ciudad',                                       type: 'text',   req: true, ph: 'Ej: Ciudad de Panamá' },
+        { id: 'fecha_doc',          label: 'Fecha del documento',                          type: 'text',   req: true, ph: 'Ej: 24 de mayo de 2026' },
+        { id: 'detalle',            label: 'Información adicional (opcional)',              type: 'textarea' },
+      ],
+    },
+    civil: {
+      emoji: '⚖️', label: 'Civil',
+      desc: 'Demandas civiles, cobros, reclamos, apelaciones',
+      tipos: ['Demanda Civil', 'Demanda de Cobro', 'Carta de Reclamo', 'Recurso de Apelación', 'Contestación de Demanda', 'Memorial Civil', 'Otro tipo de escrito civil'],
+      campos: [
+        { id: 'tipo_escrito',       label: 'Tipo de escrito',                              type: 'select', req: true },
+        { id: 'nombre_demandante',  label: 'Nombre del demandante / solicitante',          type: 'text',   req: true },
+        { id: 'nombre_demandado',   label: 'Nombre del demandado / destinatario',          type: 'text',   req: true },
+        { id: 'tribunal',           label: 'Tribunal o entidad destinataria',              type: 'text',   ph: 'Ej: Juzgado Civil del Circuito de Panamá' },
+        { id: 'hechos',             label: 'Descripción de los hechos',                   type: 'textarea', req: true, ph: 'Describe los hechos con el mayor detalle posible…' },
+        { id: 'monto',              label: 'Monto reclamado (si aplica)',                  type: 'text',   ph: 'Ej: B/. 5,000.00' },
+        { id: 'ciudad',             label: 'Ciudad',                                       type: 'text',   req: true, ph: 'Ej: Ciudad de Panamá' },
+        { id: 'fecha_doc',          label: 'Fecha del documento',                          type: 'text',   req: true, ph: 'Ej: 24 de mayo de 2026' },
+        { id: 'detalle',            label: 'Información adicional (opcional)',              type: 'textarea' },
+      ],
+    },
+    familia: {
+      emoji: '👨‍👩‍👧', label: 'Familia',
+      desc: 'Divorcios, alimentos, custodia, herencias',
+      tipos: ['Demanda de Divorcio', 'Solicitud de Custodia', 'Demanda de Alimentos', 'Acuerdo de Separación', 'Reconocimiento de Paternidad', 'Solicitud de Herencia', 'Otro tipo de escrito familiar'],
+      campos: [
+        { id: 'tipo_escrito',       label: 'Tipo de escrito',                              type: 'select', req: true },
+        { id: 'nombre_solicitante', label: 'Nombre del solicitante',                       type: 'text',   req: true },
+        { id: 'nombre_contraparte', label: 'Nombre del cónyuge / contraparte',             type: 'text',   req: true },
+        { id: 'hijos',              label: 'Hijos (nombres y edades, si aplica)',          type: 'textarea', ph: 'Ej: Juan Pérez, 8 años; María Pérez, 5 años' },
+        { id: 'hechos',             label: 'Descripción de la situación',                  type: 'textarea', req: true, ph: 'Describe la situación con el mayor detalle posible…' },
+        { id: 'ciudad',             label: 'Ciudad',                                       type: 'text',   req: true, ph: 'Ej: Ciudad de Panamá' },
+        { id: 'fecha_doc',          label: 'Fecha del documento',                          type: 'text',   req: true, ph: 'Ej: 24 de mayo de 2026' },
+        { id: 'detalle',            label: 'Información adicional (opcional)',              type: 'textarea' },
+      ],
+    },
+    comercial: {
+      emoji: '🏢', label: 'Comercial',
+      desc: 'Contratos de arrendamiento, servicios, compraventa',
+      tipos: ['Contrato de Arrendamiento', 'Contrato de Servicios', 'Contrato de Compraventa', 'Acuerdo de Confidencialidad', 'Poder Notarial', 'Carta de Intención', 'Otro tipo de contrato comercial'],
+      campos: [
+        { id: 'tipo_escrito',       label: 'Tipo de escrito',                              type: 'select', req: true },
+        { id: 'nombre_parte_a',     label: 'Nombre de la Parte A (arrendador / vendedor / prestador)', type: 'text', req: true },
+        { id: 'nombre_parte_b',     label: 'Nombre de la Parte B (arrendatario / comprador / cliente)', type: 'text', req: true },
+        { id: 'objeto',             label: 'Objeto del contrato',                          type: 'textarea', req: true, ph: 'Describe el bien, servicio o acuerdo…' },
+        { id: 'valor',              label: 'Valor o precio pactado',                       type: 'text',   ph: 'Ej: B/. 1,200.00 mensuales' },
+        { id: 'duracion',           label: 'Duración o vigencia',                          type: 'text',   ph: 'Ej: 12 meses, del 1 de junio al 31 de mayo de 2027' },
+        { id: 'ciudad',             label: 'Ciudad',                                       type: 'text',   req: true, ph: 'Ej: Ciudad de Panamá' },
+        { id: 'fecha_doc',          label: 'Fecha del documento',                          type: 'text',   req: true, ph: 'Ej: 24 de mayo de 2026' },
+        { id: 'detalle',            label: 'Condiciones especiales (opcional)',             type: 'textarea' },
+      ],
+    },
+    penal: {
+      emoji: '🚨', label: 'Penal',
+      desc: 'Denuncias, querellas, memoriales a fiscalía',
+      tipos: ['Denuncia Penal', 'Querella', 'Memorial a Fiscalía', 'Solicitud de Medidas Cautelares', 'Recurso de Habeas Corpus', 'Otro tipo de escrito penal'],
+      campos: [
+        { id: 'tipo_escrito',        label: 'Tipo de escrito',                             type: 'select', req: true },
+        { id: 'nombre_denunciante',  label: 'Nombre completo del denunciante',             type: 'text',   req: true },
+        { id: 'cedula_denunciante',  label: 'Número de cédula del denunciante',            type: 'text',   ph: 'Ej: 8-123-456' },
+        { id: 'nombre_denunciado',   label: 'Nombre del denunciado (si se conoce)',        type: 'text' },
+        { id: 'hechos',              label: 'Descripción detallada del hecho',             type: 'textarea', req: true, ph: 'Describe los hechos con fecha, hora, lugar y detalles…' },
+        { id: 'fecha_hecho',         label: 'Fecha y hora del hecho',                      type: 'text',   ph: 'Ej: 20 de mayo de 2026, 10:30 a.m.' },
+        { id: 'lugar_hecho',         label: 'Lugar donde ocurrió el hecho',                type: 'text' },
+        { id: 'testigos',            label: 'Testigos o evidencias (si aplica)',            type: 'textarea' },
+        { id: 'ciudad',              label: 'Ciudad',                                       type: 'text',   req: true, ph: 'Ej: Ciudad de Panamá' },
+        { id: 'fecha_doc',           label: 'Fecha del documento',                          type: 'text',   req: true, ph: 'Ej: 24 de mayo de 2026' },
+      ],
+    },
+    administrativo: {
+      emoji: '📋', label: 'Administrativo',
+      desc: 'Solicitudes, recursos e impugnaciones ante entidades',
+      tipos: ['Solicitud a Entidad Pública', 'Recurso de Reconsideración', 'Recurso de Apelación Administrativa', 'Impugnación', 'Carta Formal Institucional', 'Memorial Administrativo', 'Otro tipo de escrito administrativo'],
+      campos: [
+        { id: 'tipo_escrito',       label: 'Tipo de escrito',                              type: 'select', req: true },
+        { id: 'nombre_solicitante', label: 'Nombre completo del solicitante',              type: 'text',   req: true },
+        { id: 'cedula',             label: 'Número de cédula',                             type: 'text',   ph: 'Ej: 8-123-456' },
+        { id: 'entidad',            label: 'Entidad destinataria',                         type: 'text',   req: true, ph: 'Ej: Ministerio de Trabajo, CSS, MIVIOT' },
+        { id: 'objeto',             label: 'Objeto de la solicitud',                       type: 'textarea', req: true, ph: 'Describe qué estás solicitando y por qué…' },
+        { id: 'fundamento',         label: 'Fundamento legal (si conoce)',                 type: 'textarea', ph: 'Ej: Artículo 17 del Código de Trabajo…' },
+        { id: 'ciudad',             label: 'Ciudad',                                       type: 'text',   req: true, ph: 'Ej: Ciudad de Panamá' },
+        { id: 'fecha_doc',          label: 'Fecha del documento',                          type: 'text',   req: true, ph: 'Ej: 24 de mayo de 2026' },
+        { id: 'detalle',            label: 'Información adicional (opcional)',              type: 'textarea' },
+      ],
+    },
+  };
+
+  // ── Referencias DOM ────────────────────────────
+  const overlay      = document.getElementById('escritoOverlay');
+  const closeBtn     = document.getElementById('escritoClose');
+  const headerSub    = document.getElementById('escritoHeaderSub');
+  const step1        = document.getElementById('escritoStep1');
+  const step2        = document.getElementById('escritoStep2');
+  const step3        = document.getElementById('escritoStep3');
+  const step4        = document.getElementById('escritoStep4');
+  const catsEl       = document.getElementById('escritoCats');
+  const backBtn      = document.getElementById('escritoBackBtn');
+  const formContainer= document.getElementById('escritoFormContainer');
+  const formError    = document.getElementById('escritoFormError');
+  const generateBtn  = document.getElementById('escritoGenerateBtn');
+  const copyBtn      = document.getElementById('escritoCopyBtn');
+  const downloadBtn  = document.getElementById('escritoDownloadBtn');
+  const printBtn     = document.getElementById('escritoPrintBtn');
+  const docEl        = document.getElementById('escritoDoc');
+  const newBtn       = document.getElementById('escritoNewBtn');
+  const escritoCard  = document.getElementById('jtEscritoCard');
+
+  if (!overlay || !escritoCard) return;
+
+  let selectedCategory = null;
+  let generatedText    = '';
+  let generatedType    = '';
+
+  // ── Abrir / Cerrar ────────────────────────────
+  function openEscrito() {
+    overlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    goToStep1();
+  }
+
+  function closeEscrito() {
+    overlay.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  // ── Navegación entre pasos ────────────────────
+  function showStep(stepEl) {
+    [step1, step2, step3, step4].forEach(s => s.classList.add('hidden'));
+    stepEl.classList.remove('hidden');
+  }
+
+  function goToStep1() {
+    selectedCategory = null;
+    headerSub.textContent = 'Generador de escritos jurídicos';
+    buildCategoryGrid();
+    showStep(step1);
+  }
+
+  function goToStep2(catKey) {
+    selectedCategory = catKey;
+    const cat = CATEGORIAS[catKey];
+    headerSub.textContent = cat.emoji + ' ' + cat.label;
+    buildForm(cat);
+    formError.classList.add('hidden');
+    showStep(step2);
+  }
+
+  function goToStep3() {
+    showStep(step3);
+  }
+
+  function goToStep4(text, docType) {
+    generatedText = text;
+    generatedType = docType;
+    docEl.textContent = text;
+    headerSub.textContent = 'Escrito generado';
+    showStep(step4);
+  }
+
+  // ── Construir grid de categorías ──────────────
+  function buildCategoryGrid() {
+    catsEl.innerHTML = '';
+    Object.entries(CATEGORIAS).forEach(([key, cat]) => {
+      const card = document.createElement('div');
+      card.className = 'escrito-cat-card';
+      card.setAttribute('role', 'button');
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('aria-label', `Categoría: ${cat.label}`);
+      card.innerHTML = `
+        <span class="escrito-cat-emoji" aria-hidden="true">${cat.emoji}</span>
+        <span class="escrito-cat-label">${cat.label}</span>
+        <span class="escrito-cat-desc">${cat.desc}</span>
+      `;
+      const select = () => {
+        if (!currentUser) {
+          closeEscrito();
+          openAuthModal('login', { showSkip: false });
+          return;
+        }
+        goToStep2(key);
+      };
+      card.addEventListener('click', select);
+      card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(); } });
+      catsEl.appendChild(card);
+    });
+  }
+
+  // ── Construir formulario dinámico ─────────────
+  function buildForm(cat) {
+    formContainer.innerHTML = '';
+
+    const title = document.createElement('p');
+    title.className = 'escrito-form-title';
+    title.textContent = 'Completa los datos del escrito';
+    formContainer.appendChild(title);
+
+    cat.campos.forEach(campo => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'escrito-field';
+
+      const label = document.createElement('label');
+      label.className = 'escrito-label';
+      label.setAttribute('for', 'ec_' + campo.id);
+      label.textContent = campo.label + (campo.req ? ' *' : '');
+      wrapper.appendChild(label);
+
+      if (campo.type === 'select') {
+        const sel = document.createElement('select');
+        sel.className = 'escrito-select';
+        sel.id = 'ec_' + campo.id;
+        sel.name = campo.id;
+        const blank = document.createElement('option');
+        blank.value = '';
+        blank.textContent = '— Selecciona una opción —';
+        sel.appendChild(blank);
+        cat.tipos.forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t;
+          opt.textContent = t;
+          sel.appendChild(opt);
+        });
+        wrapper.appendChild(sel);
+
+      } else if (campo.type === 'textarea') {
+        const ta = document.createElement('textarea');
+        ta.className = 'escrito-textarea';
+        ta.id = 'ec_' + campo.id;
+        ta.name = campo.id;
+        ta.rows = 3;
+        ta.placeholder = campo.ph || '';
+        wrapper.appendChild(ta);
+
+      } else {
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.className = 'escrito-input';
+        inp.id = 'ec_' + campo.id;
+        inp.name = campo.id;
+        inp.placeholder = campo.ph || '';
+        inp.autocomplete = 'off';
+        wrapper.appendChild(inp);
+      }
+
+      formContainer.appendChild(wrapper);
+    });
+  }
+
+  // ── Recopilar valores del formulario ──────────
+  function collectFields(cat) {
+    const fields = {};
+    cat.campos.forEach(campo => {
+      const el = document.getElementById('ec_' + campo.id);
+      if (el) fields[campo.label] = el.value.trim();
+    });
+    return fields;
+  }
+
+  function validateFields(cat) {
+    for (const campo of cat.campos) {
+      if (!campo.req) continue;
+      const el = document.getElementById('ec_' + campo.id);
+      if (el && !el.value.trim()) return campo.label;
+    }
+    return null;
+  }
+
+  // ── Generar escrito ───────────────────────────
+  async function handleGenerate() {
+    if (!selectedCategory) return;
+    const cat = CATEGORIAS[selectedCategory];
+
+    const missing = validateFields(cat);
+    if (missing) {
+      formError.textContent = `El campo "${missing}" es obligatorio.`;
+      formError.classList.remove('hidden');
+      return;
+    }
+    formError.classList.add('hidden');
+
+    const sb = getSupabase();
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      closeEscrito();
+      openAuthModal('login', { showSkip: false });
+      return;
+    }
+
+    const fields      = collectFields(cat);
+    const tipoEl      = document.getElementById('ec_tipo_escrito');
+    const documentType = tipoEl?.value || cat.label;
+
+    goToStep3();
+
+    try {
+      const res = await fetch('/api/escrito', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          category:     cat.label,
+          documentType,
+          fields,
+          authToken:    session.access_token,
+        }),
+      });
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data) {
+        throw new Error(data?.error || 'Error al generar el escrito.');
+      }
+
+      goToStep4(data.escrito, documentType);
+
+    } catch (err) {
+      showStep(step2);
+      formError.textContent = err.message || 'Error de conexión. Intenta de nuevo.';
+      formError.classList.remove('hidden');
+    }
+  }
+
+  // ── Copiar al portapapeles ─────────────────────
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(generatedText);
+      const orig = copyBtn.innerHTML;
+      copyBtn.textContent = '✓ Copiado';
+      copyBtn.style.color = 'var(--gold)';
+      setTimeout(() => { copyBtn.innerHTML = orig; copyBtn.style.color = ''; }, 2000);
+    } catch {
+      copyBtn.textContent = 'Error';
+      setTimeout(() => { copyBtn.textContent = '📋 Copiar'; }, 2000);
+    }
+  }
+
+  // ── Descargar como .doc ────────────────────────
+  function handleDownload() {
+    const safe = generatedText
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office'
+      xmlns:w='urn:schemas-microsoft-com:office:word'
+      xmlns='http://www.w3.org/TR/REC-html40'>
+<head><meta charset='utf-8'><title>${generatedType}</title>
+<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]-->
+<style>@page{margin:2.5cm}body{font-family:'Times New Roman',serif;font-size:12pt;line-height:1.6}pre{white-space:pre-wrap;font-family:'Times New Roman',serif;font-size:12pt}</style>
+</head><body><pre>${safe}</pre></body></html>`;
+
+    const blob = new Blob(['﻿', html], { type: 'application/vnd.ms-word;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `TuEscritoIA_${generatedType.replace(/\s+/g, '_')}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+  }
+
+  // ── Imprimir / PDF ────────────────────────────
+  function handlePrint() {
+    const safe = generatedText
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>${generatedType} — Tu Proceso Legal</title>
+  <style>
+    body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; margin: 2.5cm; line-height: 1.6; color: #000; }
+    pre  { white-space: pre-wrap; font-family: inherit; font-size: inherit; }
+    @media print { body { margin: 0; } }
+  </style>
+</head>
+<body><pre>${safe}</pre>
+<script>window.onload=function(){window.print();}<\/script>
+</body></html>`);
+    win.document.close();
+  }
+
+  // ── Listeners ─────────────────────────────────
+  escritoCard.addEventListener('click', () => {
+    const jtOverlay = document.getElementById('jtOverlay');
+    if (jtOverlay) jtOverlay.classList.add('hidden');
+    openEscrito();
+  });
+  escritoCard.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); escritoCard.click(); }
+  });
+
+  closeBtn.addEventListener('click', closeEscrito);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeEscrito(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !overlay.classList.contains('hidden')) closeEscrito();
+  });
+
+  backBtn.addEventListener('click', goToStep1);
+  generateBtn.addEventListener('click', handleGenerate);
+  copyBtn.addEventListener('click', handleCopy);
+  downloadBtn.addEventListener('click', handleDownload);
+  printBtn.addEventListener('click', handlePrint);
+  newBtn.addEventListener('click', goToStep1);
+
+}());
+
+// ════════════════════════════════════════════════════════════════
 // BIBLIOTECA JURÍDICA — JuriTool
 // ════════════════════════════════════════════════════════════════
 (function BibliotecaJuridica() {

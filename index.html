@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,700;6..96,800&family=Inter:wght@400;500;600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=6" />
+  <link rel="stylesheet" href="styles.css?v=7" />
   <!-- CSS crítico: evita flash de contenido sin estilo antes de que cargue styles.css -->
   <style>
     html, body { background: #070c18; }
@@ -20,8 +20,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js" defer></script>
-  <script src="app.js?v=6" defer></script>
-  <script src="quiz.js?v=6" defer></script>
+  <script src="app.js?v=7" defer></script>
+  <script src="quiz.js?v=7" defer></script>
 </head>
 <body>
 
@@ -438,8 +438,8 @@
           <span class="jt-soon-tag" aria-label="Próximamente">Próximamente</span>
         </div>
 
-        <!-- TuEscritoIA (próximamente) -->
-        <div class="jt-card" role="button" tabindex="0" aria-label="TuEscritoIA — próximamente">
+        <!-- TuEscritoIA (ACTIVO) -->
+        <div class="jt-card jt-card-live" id="jtEscritoCard" role="button" tabindex="0" aria-label="TuEscritoIA — generar escritos jurídicos">
           <div class="jt-card-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -453,7 +453,7 @@
             <div class="jt-card-name">TuEscritoIA</div>
             <div class="jt-card-desc">Genera escritos jurídicos profesionales asistidos por inteligencia artificial.</div>
           </div>
-          <span class="jt-soon-tag" aria-label="Próximamente">Próximamente</span>
+          <span class="jt-card-arrow" aria-hidden="true">→</span>
         </div>
 
         <!-- Descubre tu Rama (ACTIVO) -->
@@ -594,6 +594,85 @@
     <!-- Click fuera cierra el cajón -->
     <div class="history-backdrop" id="historyBackdrop" aria-hidden="true"></div>
   </div>
+
+
+  <!-- ══ TUESCRITOIA — MODAL ═══════════════════════ -->
+  <div class="escrito-overlay hidden" id="escritoOverlay" role="dialog" aria-modal="true" aria-label="TuEscritoIA — Generador de escritos jurídicos">
+    <div class="escrito-modal">
+
+      <!-- Header sticky -->
+      <div class="escrito-header">
+        <div class="escrito-header-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+          <span>TuEscritoIA</span>
+          <span class="escrito-header-sub" id="escritoHeaderSub">Generador de escritos jurídicos</span>
+        </div>
+        <button class="escrito-close" id="escritoClose" aria-label="Cerrar TuEscritoIA">✕</button>
+      </div>
+
+      <!-- Step 1: Seleccionar categoría -->
+      <div class="escrito-step" id="escritoStep1">
+        <p class="escrito-step-desc">¿Qué tipo de escrito necesitas?</p>
+        <div class="escrito-cats" id="escritoCats">
+          <!-- Generado por JS -->
+        </div>
+      </div>
+
+      <!-- Step 2: Formulario dinámico -->
+      <div class="escrito-step hidden" id="escritoStep2">
+        <button class="escrito-back" id="escritoBackBtn" aria-label="Volver a categorías">← Volver</button>
+        <div id="escritoFormContainer">
+          <!-- Generado dinámicamente -->
+        </div>
+        <div class="escrito-form-error hidden" id="escritoFormError" role="alert"></div>
+        <button class="escrito-generate-btn" id="escritoGenerateBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16">
+            <path d="M36 7 C36 27 24 36 4 36 C24 36 36 48 36 68 C36 48 49 36 68 36 C49 36 36 27 36 7 Z"/>
+          </svg>
+          Generar Escrito con IA
+        </button>
+      </div>
+
+      <!-- Step 3: Generando -->
+      <div class="escrito-step hidden" id="escritoStep3">
+        <div class="escrito-generating">
+          <div class="escrito-spinner" aria-hidden="true"></div>
+          <p class="escrito-generating-title">Redactando tu escrito jurídico…</p>
+          <span class="escrito-generating-sub">Analizando la legislación panameña aplicable</span>
+        </div>
+      </div>
+
+      <!-- Step 4: Resultado -->
+      <div class="escrito-step hidden" id="escritoStep4">
+        <div class="escrito-result-header">
+          <span class="escrito-result-tag">✓ Escrito generado</span>
+          <div class="escrito-actions">
+            <button class="escrito-action-btn" id="escritoCopyBtn" title="Copiar al portapapeles">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copiar
+            </button>
+            <button class="escrito-action-btn" id="escritoDownloadBtn" title="Descargar como Word (.doc)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              .doc
+            </button>
+            <button class="escrito-action-btn" id="escritoPrintBtn" title="Imprimir o guardar como PDF">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              PDF
+            </button>
+          </div>
+        </div>
+        <div class="escrito-doc" id="escritoDoc" aria-label="Documento generado"></div>
+        <button class="escrito-new-btn" id="escritoNewBtn">✏️ Generar otro escrito</button>
+        <p class="escrito-result-disclaimer">⚠️ Documento generado con IA · Revisión por abogado colegiado recomendada antes de uso oficial</p>
+      </div>
+
+    </div><!-- /.escrito-modal -->
+  </div><!-- /.escrito-overlay -->
 
 </body>
 </html>
