@@ -96,7 +96,7 @@ Genera el documento completo ahora:`;
     if (!anthropicRes.ok) {
       const errBody = await anthropicRes.json().catch(() => ({}));
       const msg = errBody?.error?.message || `Error ${anthropicRes.status}`;
-      if (anthropicRes.status === 429) return res.status(502).json({ error: 'Límite de uso alcanzado. Intenta en unos minutos.' });
+      if (anthropicRes.status === 429) return res.status(429).json({ error: 'Servicio temporalmente sobrecargado. Intenta en unos minutos.' });
       return res.status(502).json({ error: `Error al generar el escrito: ${msg}` });
     }
 

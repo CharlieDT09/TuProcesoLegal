@@ -4,10 +4,11 @@
 //
 // Flujo RAG:
 //   1. Recibe mensaje del usuario
-//   2. Genera embedding con Voyage AI voyage-law-2
-//   3. Busca artículos relevantes en Supabase pgvector
-//   4. Inyecta artículos como contexto en el prompt de Claude
-//   5. Devuelve respuesta citando artículos reales
+//   2. Verifica rate limit (IP para anónimos, user_id para registrados)
+//   3. Genera embedding con Voyage AI voyage-law-2
+//   4. Busca artículos relevantes en Supabase pgvector
+//   5. Inyecta artículos como contexto en el prompt de Claude
+//   6. Devuelve respuesta citando artículos reales
 //
 // Variables de entorno requeridas en Vercel:
 //   ANTHROPIC_API_KEY   — Claude API key
@@ -16,11 +17,16 @@
 //   SUPABASE_ANON_KEY   — anon key (solo lectura de legal_documents)
 // ================================================
 
-const MAX_MESSAGE_CHARS = 2000;
-const MAX_HISTORY_MSGS  = 20;
-const RAG_MATCH_COUNT   = 6;
-const RAG_THRESHOLD     = 0.48;
-const DEMO_DELAY_MS     = 1200;
+const MAX_MESSAGE_CHARS  = 2000;
+const MAX_HISTORY_MSGS   = 20;
+const RAG_MATCH_COUNT    = 6;
+const RAG_THRESHOLD      = 0.48;
+const DEMO_DELAY_MS      = 1200;
+
+// Rate limiting
+const RATE_LIMIT_ANON    = 3;   // mensajes cada 6 h para usuarios sin cuenta
+const RATE_LIMIT_AUTH    = 5;   // mensajes cada 6 h para usuarios registrados
+const RATE_WINDOW_HOURS  = 6;
 
 const BASE_SYSTEM_PROMPT = `Eres el asistente jurídico de "Tu Proceso Legal", especializado exclusivamente en el derecho de la República de Panamá. Orientas a ciudadanos panameños sobre sus derechos y la legislación vigente.
 
@@ -57,7 +63,6 @@ let demoIndex = 0;
 // ════════════════════════════════════════════════════════════════
 
 module.exports = async function handler(req, res) {
-  // CORS — permite llamadas desde el frontend
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -67,7 +72,7 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
 
   const body = req.body || {};
-  const { messages } = body;
+  const { messages, authToken } = body;
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Sin mensajes' });
@@ -93,12 +98,84 @@ module.exports = async function handler(req, res) {
 
   const hasFullConfig = anthropicKey?.startsWith('sk-ant-') && anthropicKey.length >= 40;
 
-  // ── MODO DEMO ─────────────────────────────────────────────────
+  // ── MODO DEMO (sin API key) → omitir rate limit ───────────────
   if (!hasFullConfig) {
     await sleep(DEMO_DELAY_MS);
     const reply = DEMO_RESPONSES[demoIndex % DEMO_RESPONSES.length];
     demoIndex++;
     return res.status(200).json({ reply });
+  }
+
+  // ── RATE LIMITING ─────────────────────────────────────────────
+  let rateLimitRemaining = null;
+  let rateLimitResetAt   = null;
+
+  if (supabaseUrl && supabaseAnon) {
+    try {
+      let identifier;
+      let messageLimit;
+
+      // Si viene token, verificar con Supabase para obtener el user_id
+      if (authToken) {
+        try {
+          const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+              'apikey': supabaseAnon,
+            },
+          });
+          if (userRes.ok) {
+            const userData = await userRes.json();
+            if (userData?.id) {
+              identifier   = `user_${userData.id}`;
+              messageLimit = RATE_LIMIT_AUTH;
+            }
+          }
+        } catch (err) {
+          console.warn('[RateLimit] Error verificando token:', err.message);
+        }
+      }
+
+      // Sin usuario autenticado → usar IP
+      if (!identifier) {
+        const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
+          || req.headers['x-real-ip']
+          || 'unknown';
+        identifier   = `ip_${ip}`;
+        messageLimit = RATE_LIMIT_ANON;
+      }
+
+      // Verificar e incrementar vía RPC atómica
+      const rlRes = await fetch(`${supabaseUrl}/rest/v1/rpc/check_rate_limit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey':        supabaseAnon,
+          'Authorization': `Bearer ${supabaseAnon}`,
+        },
+        body: JSON.stringify({
+          p_identifier: identifier,
+          p_limit:      messageLimit,
+          p_window_hrs: RATE_WINDOW_HOURS,
+        }),
+      });
+
+      if (rlRes.ok) {
+        const rl = await rlRes.json();
+        if (!rl.allowed) {
+          return res.status(429).json({
+            error:     `Has alcanzado el límite de ${messageLimit} consultas cada ${RATE_WINDOW_HOURS} horas.`,
+            resetAt:   rl.reset_at,
+            remaining: 0,
+          });
+        }
+        rateLimitRemaining = rl.remaining;
+        rateLimitResetAt   = rl.reset_at;
+      }
+    } catch (err) {
+      // Fallo en rate limit → permitir el mensaje (fail open)
+      console.error('[RateLimit] Error:', err.message);
+    }
   }
 
   // ── PASO 1: RAG — recuperar artículos relevantes ──────────────
@@ -150,7 +227,7 @@ module.exports = async function handler(req, res) {
       const errBody = await anthropicRes.json().catch(() => ({}));
       const msg = errBody?.error?.message || `Error ${anthropicRes.status}`;
       if (anthropicRes.status === 401) return res.status(502).json({ error: 'API key inválida. Verifica ANTHROPIC_API_KEY en Vercel.' });
-      if (anthropicRes.status === 429) return res.status(502).json({ error: 'Límite de uso alcanzado. Verifica tu cuenta en console.anthropic.com.' });
+      if (anthropicRes.status === 429) return res.status(429).json({ error: 'Servicio temporalmente sobrecargado. Intenta en unos minutos.' });
       if (anthropicRes.status === 403) return res.status(502).json({ error: 'Sin acceso. Verifica que tu cuenta tenga créditos activos.' });
       return res.status(502).json({ error: `Error de Anthropic (${anthropicRes.status}): ${msg}` });
     }
@@ -159,7 +236,13 @@ module.exports = async function handler(req, res) {
     const reply = data.content?.find(b => b.type === 'text')?.text || 'Sin respuesta.';
     const usage = data.usage || { input_tokens: 0, output_tokens: 0 };
 
-    return res.status(200).json({ reply, usage, rag_articles: ragContext ? RAG_MATCH_COUNT : 0 });
+    return res.status(200).json({
+      reply,
+      usage,
+      rag_articles: ragContext ? RAG_MATCH_COUNT : 0,
+      remaining:    rateLimitRemaining,
+      resetAt:      rateLimitResetAt,
+    });
 
   } catch {
     return res.status(502).json({ error: 'Error de conexión con el servidor. Intenta de nuevo.' });

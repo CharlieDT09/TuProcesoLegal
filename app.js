@@ -67,7 +67,7 @@ function doLaunchChat() {
   }, { once: true });
   appRoot.classList.add('active');
   if (!currentUser) restoreHistory();
-  updateBudgetIndicator();
+  updateRateLimitUI();
   chatInput.focus();
 }
 
@@ -148,9 +148,8 @@ const MAX_INPUT_CHARS     = 1000;
 const MAX_TEXTAREA_HEIGHT = 120;
 const SCROLL_DELAY_MS     = 50;
 const MAX_HISTORY_PAIRS   = 10;
-const MONTHLY_BUDGET_USD  = 5.00;
-const COST_PER_INPUT_TOKEN  = 3.00  / 1_000_000;
-const COST_PER_OUTPUT_TOKEN = 15.00 / 1_000_000;
+const RATE_LIMIT_ANON     = 3;   // mensajes por ventana para usuarios sin cuenta
+const RATE_LIMIT_AUTH     = 5;   // mensajes por ventana para usuarios registrados
 
 // ══ AUTENTICACIÓN ════════════════════════════════
 
@@ -171,7 +170,7 @@ async function initAuth() {
     }
   }
 
-  sb.auth.onAuthStateChange((_event, session) => {
+  const { data: { subscription: authSubscription } } = sb.auth.onAuthStateChange((_event, session) => {
     if (_event === 'PASSWORD_RECOVERY') {
       // Usuario llegó desde el link de recuperación → mostrar form de nueva contraseña
       openResetPasswordPanel(session?.user?.email || '');
@@ -179,7 +178,10 @@ async function initAuth() {
     }
     currentUser = session?.user || null;
     updateAuthUI();
+    // Al cambiar sesión, resetear estado de rate limit (el servidor dará el nuevo estado)
+    resetRateLimitState();
   });
+  // authSubscription.unsubscribe() si en algún momento se necesita limpiar el listener
 }
 
 function updateAuthUI() {
@@ -358,7 +360,7 @@ async function handleRegister() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, name }),
-  }).catch(() => {});
+  }).catch(err => console.warn('[welcome-email]', err.message));
 
   if (!data.session) {
     showAuthMessage(
@@ -686,7 +688,7 @@ function logAnalytics(queryText, usage = {}) {
     query_summary: queryText.slice(0, 200),
     input_tokens:  usage.input_tokens  || 0,
     output_tokens: usage.output_tokens || 0,
-  }).then(() => {}).catch(() => {});
+  }).then(() => {}).catch(err => console.warn('[analytics]', err.message));
 }
 
 // Expose helpers to quiz.js (loaded after app.js, same page context).
@@ -709,28 +711,96 @@ function formatRelativeDate(isoString) {
   return date.toLocaleDateString('es-PA', { month: 'short', day: 'numeric' });
 }
 
-// ══ PRESUPUESTO ═══════════════════════════════════
-function getBudgetData() {
-  const now = new Date();
-  const key = `tpl_cost_${now.getFullYear()}_${now.getMonth()}`;
-  return { spent: parseFloat(localStorage.getItem(key) || '0'), key };
+// ══ RATE LIMITING (cliente) ════════════════════════
+// El límite real se aplica en el servidor.
+// El cliente refleja el estado devuelto por /api/chat
+// y muestra un countdown cuando la ventana se agota.
+
+const rateLimitState = {
+  remaining: null,   // null = aún no sabemos, número = mensajes restantes
+  resetAt:   null,   // ISO string de cuándo se reinicia la ventana
+  _timer:    null,   // ID de setInterval del countdown
+};
+
+function getRateLimitCap() {
+  return currentUser ? RATE_LIMIT_AUTH : RATE_LIMIT_ANON;
 }
 
 function hasReachedLimit() {
-  return getBudgetData().spent >= MONTHLY_BUDGET_USD;
+  return rateLimitState.remaining === 0;
 }
 
-function addUsageCost(inputTokens, outputTokens) {
-  const { spent, key } = getBudgetData();
-  const cost = (inputTokens * COST_PER_INPUT_TOKEN) + (outputTokens * COST_PER_OUTPUT_TOKEN);
-  localStorage.setItem(key, (spent + cost).toFixed(6));
-}
-
-function updateBudgetIndicator() {
+function updateRateLimitUI() {
   if (!budgetIndicatorEl) return;
-  const { spent } = getBudgetData();
-  const remaining = Math.max(0, MONTHLY_BUDGET_USD - spent);
-  budgetIndicatorEl.textContent = `· Crédito mensual restante: $${remaining.toFixed(2)}`;
+  const { remaining, resetAt } = rateLimitState;
+
+  if (remaining === null) {
+    budgetIndicatorEl.textContent = '';
+    budgetIndicatorEl.className = 'budget-indicator';
+    return;
+  }
+
+  if (remaining === 0 && resetAt) {
+    if (!rateLimitState._timer) startCountdown();
+    return;
+  }
+
+  clearCountdown();
+  const cap = getRateLimitCap();
+  if (remaining < cap) {
+    const s = remaining === 1 ? '' : 's';
+    budgetIndicatorEl.textContent = `· ${remaining} consulta${s} disponible${s}`;
+    budgetIndicatorEl.className = 'budget-indicator' + (remaining <= 1 ? ' rl-low' : '');
+  } else {
+    budgetIndicatorEl.textContent = '';
+    budgetIndicatorEl.className = 'budget-indicator';
+  }
+}
+
+function startCountdown() {
+  if (!budgetIndicatorEl || !rateLimitState.resetAt) return;
+  clearCountdown();
+
+  function tick() {
+    const diff = new Date(rateLimitState.resetAt).getTime() - Date.now();
+
+    if (diff <= 0) {
+      clearCountdown();
+      rateLimitState.remaining = null;
+      rateLimitState.resetAt   = null;
+      budgetIndicatorEl.textContent = '';
+      budgetIndicatorEl.className = 'budget-indicator';
+      // Ocultar error de límite si aún está visible
+      if (errorBanner.textContent.includes('límite')) hideError();
+      return;
+    }
+
+    const h  = Math.floor(diff / 3_600_000);
+    const m  = Math.floor((diff % 3_600_000) / 60_000);
+    const s  = Math.floor((diff % 60_000) / 1_000);
+    const hh = String(h).padStart(2, '0');
+    const mm = String(m).padStart(2, '0');
+    const ss = String(s).padStart(2, '0');
+    budgetIndicatorEl.textContent = `· Límite alcanzado · Se reinicia en ${hh}:${mm}:${ss}`;
+    budgetIndicatorEl.className = 'budget-indicator rl-limit';
+  }
+
+  tick();
+  rateLimitState._timer = setInterval(tick, 1_000);
+}
+
+function clearCountdown() {
+  if (rateLimitState._timer) {
+    clearInterval(rateLimitState._timer);
+    rateLimitState._timer = null;
+  }
+}
+
+function resetRateLimitState() {
+  clearCountdown();
+  rateLimitState.remaining = null;
+  rateLimitState.resetAt   = null;
+  updateRateLimitUI();
 }
 
 // ══ PERSISTENCIA LOCAL (modo anónimo) ═════════════
@@ -828,7 +898,9 @@ async function sendMessage(text) {
   }
 
   if (hasReachedLimit()) {
-    showError(`Has alcanzado el presupuesto mensual de $${MONTHLY_BUDGET_USD.toFixed(2)}. Se reinicia automáticamente el próximo mes.`);
+    const cap = getRateLimitCap();
+    showError(`Has alcanzado el límite de ${cap} consultas por cada 6 horas.`);
+    updateRateLimitUI();
     return;
   }
 
@@ -853,15 +925,36 @@ async function sendMessage(text) {
   setLoading(true);
 
   try {
+    // Incluir token de auth si el usuario está logueado
+    const sb = getSupabase();
+    const sessionData = sb ? await sb.auth.getSession() : null;
+    const authToken   = sessionData?.data?.session?.access_token || null;
+
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: history }),
+      body: JSON.stringify({
+        messages: history,
+        ...(authToken && { authToken }),
+      }),
     });
 
     const data = await response.json().catch(() => null);
     if (!data) {
       showError('Respuesta inesperada del servidor. Intenta de nuevo.');
+      history.pop();
+      userRow.remove();
+      return;
+    }
+
+    // Rate limit alcanzado en el servidor
+    if (response.status === 429) {
+      if (data.resetAt) {
+        rateLimitState.remaining = 0;
+        rateLimitState.resetAt   = data.resetAt;
+        updateRateLimitUI();
+      }
+      showError(data.error || 'Límite de consultas alcanzado. Intenta más tarde.');
       history.pop();
       userRow.remove();
       return;
@@ -875,9 +968,12 @@ async function sendMessage(text) {
     }
 
     const reply = data.reply;
-    if (data.usage) {
-      addUsageCost(data.usage.input_tokens, data.usage.output_tokens);
-      updateBudgetIndicator();
+
+    // Actualizar contador de mensajes restantes desde la respuesta del servidor
+    if (data.remaining !== undefined && data.remaining !== null) {
+      rateLimitState.remaining = data.remaining;
+      rateLimitState.resetAt   = data.resetAt || null;
+      updateRateLimitUI();
     }
 
     await addMessage('assistant', reply);
@@ -1016,12 +1112,13 @@ function scrollToBottom() {
   if (!trigger || !overlay) return;
 
   // Mostrar/ocultar el botón según si el chat está activo
-  const observer = new MutationObserver(() => {
+  const jtObserver = new MutationObserver(() => {
     const chatActive = appRoot.classList.contains('active');
     trigger.style.display = chatActive ? 'flex' : 'none';
     if (!chatActive) closeJT();
   });
-  observer.observe(appRoot, { attributes: true, attributeFilter: ['class'] });
+  jtObserver.observe(appRoot, { attributes: true, attributeFilter: ['class'] });
+  // jtObserver.disconnect() si en algún momento se desmonta el componente
 
   // Ocultar badge si ya fue visto antes
   if (localStorage.getItem('jt_badge_seen')) {

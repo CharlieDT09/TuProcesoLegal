@@ -354,6 +354,15 @@ html, body {
   font-size: 11px;
   color: var(--dim);
   letter-spacing: 0.01em;
+  transition: color 0.3s;
+}
+.budget-indicator.rl-low {
+  color: #c8900a;
+  font-weight: 600;
+}
+.budget-indicator.rl-limit {
+  color: var(--error-text, #e74c3c);
+  font-weight: 600;
 }
 
 .tpl-clear {
