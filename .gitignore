@@ -1,10 +1,22 @@
+# Variables de entorno — NUNCA subir al repo
 .env
 .env.local
+.env.production
+database/.env
+
+# Dependencias
 node_modules/
 database/node_modules/
+
+# Plataformas (ya no usados)
 .netlify/
+
+# Claude Code
 .claude/
+
+# Logs y temporales
 *.log
 .DS_Store
 __pycache__/
 *.pyc
+*.pyo
