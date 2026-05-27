@@ -82,7 +82,8 @@ module.exports = async function handler(req, res) {
     if (!msg || typeof msg.role !== 'string' || typeof msg.content !== 'string') {
       return res.status(400).json({ error: 'Formato de mensaje inválido' });
     }
-    if (msg.content.length > MAX_MESSAGE_CHARS) {
+    // Solo validar longitud en mensajes del usuario, no en respuestas del asistente
+    if (msg.role === 'user' && msg.content.length > MAX_MESSAGE_CHARS) {
       return res.status(400).json({ error: `El mensaje supera el límite de ${MAX_MESSAGE_CHARS} caracteres.` });
     }
   }
