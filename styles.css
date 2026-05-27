@@ -1330,61 +1330,6 @@ html, body {
 /* Compensar el nav fijo para que el hero no quede tapado */
 .lp-hero { padding-top: 100px; }
 
-/* ══ Google OAuth button ══════════════════════════ */
-.auth-google {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  background: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
-  padding: 11px 16px;
-  color: #1f1f1f;
-  font-size: 14px;
-  font-weight: 500;
-  font-family: var(--sans);
-  cursor: pointer;
-  transition: opacity 0.18s, transform 0.15s, box-shadow 0.18s;
-  margin-bottom: 4px;
-}
-
-.auth-google:hover {
-  opacity: 0.93;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
-}
-
-.auth-google:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* ── Divisor "o" ─────────────────────────────── */
-.auth-divider {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 16px 0 14px;
-}
-
-.auth-divider::before,
-.auth-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-
-.auth-divider span {
-  font-size: 12px;
-  color: var(--dim);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
 /* ══ Botón "Continuar sin cuenta" ════════════════ */
 .auth-skip-row {
   margin-top: 20px;
