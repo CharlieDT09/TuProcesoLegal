@@ -3,8 +3,15 @@
 // Vercel Function: /api/welcome-email
 // ================================================
 
+const { checkRateLimit } = require('../lib/rate-limit');
+
 const FROM_ADDRESS = 'Tu Proceso Legal IA <noreply@tuprocesoia.com>';
 const FROM_NAME    = 'Tu Proceso Legal IA';
+
+// Rate limit estricto por IP — sin esto, alguien podría usar el endpoint
+// para mandar emails de bienvenida falsos a cualquier dirección.
+const RATE_LIMIT_WELCOME = 3;
+const RATE_WINDOW_HRS    = 1;
 
 module.exports = async function handler(req, res) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -13,12 +20,25 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
 
   const { email, name } = req.body || {};
-  if (!email || typeof email !== 'string' || !email.includes('@')) {
+  if (!email || typeof email !== 'string' || !email.includes('@') || email.length > 200) {
     return res.status(400).json({ error: 'Email inválido' });
   }
 
-  const RESEND_KEY = process.env.RESEND_API_KEY;
+  const RESEND_KEY   = process.env.RESEND_API_KEY;
+  const supabaseUrl  = process.env.SUPABASE_URL;
+  const supabaseAnon = process.env.SUPABASE_ANON_KEY;
   if (!RESEND_KEY) return res.status(503).json({ error: 'Servicio de email no configurado' });
+
+  // ── Rate limit por IP ──
+  const rl = await checkRateLimit({
+    req, supabaseUrl, supabaseAnon,
+    prefix:    'welcome',
+    limit:     RATE_LIMIT_WELCOME,
+    windowHrs: RATE_WINDOW_HRS,
+  });
+  if (!rl.allowed) {
+    return res.status(429).json({ error: 'Demasiadas solicitudes. Intenta más tarde.' });
+  }
 
   try {
     const resendRes = await fetch('https://api.resend.com/emails', {

@@ -4,6 +4,11 @@
 // Genera escritos jurídicos profesionales con Claude
 // ================================================
 
+const { checkRateLimit } = require('../lib/rate-limit');
+
+const RATE_LIMIT_ESCRITO = 5;   // 5 escritos cada 6 horas por usuario
+const RATE_WINDOW_HOURS  = 6;
+
 const SYSTEM_PROMPT = `Eres un redactor legal especializado en derecho panameño. Tu tarea es generar documentos jurídicos profesionales y completos conforme a la legislación vigente de la República de Panamá.
 
 INSTRUCCIONES:
@@ -12,7 +17,13 @@ INSTRUCCIONES:
 3. Cita artículos específicos de la legislación panameña cuando sean relevantes (Código de Trabajo, Código Civil, Código Judicial, Código de la Familia, Código Penal, Código Procesal Penal, etc.).
 4. Si el usuario no proporcionó algún dato necesario, usa [COMPLETAR: descripción breve] para indicar dónde agregar esa información.
 5. NO incluyas explicaciones externas, comentarios ni meta-texto sobre el documento. Solo el documento jurídico en sí.
-6. Al terminar el documento, agrega una línea separadora y la nota obligatoria: "— Documento generado con asistencia de inteligencia artificial. Se recomienda su revisión por un abogado colegiado de la República de Panamá antes de su uso oficial."`;
+6. Al terminar el documento, agrega una línea separadora y la nota obligatoria: "— Documento generado con asistencia de inteligencia artificial. Se recomienda su revisión por un abogado colegiado de la República de Panamá antes de su uso oficial."
+7. NO uses formato markdown bajo ninguna circunstancia. Específicamente:
+   - NO uses asteriscos (** o *) para negrita o cursiva — los escritos jurídicos usan MAYÚSCULAS para énfasis.
+   - NO uses almohadillas (#, ##, ###) para títulos — usa MAYÚSCULAS centradas o subrayadas con guiones.
+   - NO uses guiones (-) ni asteriscos (*) para listas — usa numeración "1.", "2.", "3." o literales "a)", "b)", "c)".
+   - NO uses bloques de código con backticks.
+   El documento debe ser texto plano profesional como un escrito jurídico tradicional listo para imprimir.`;
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -37,21 +48,44 @@ module.exports = async function handler(req, res) {
     return res.status(401).json({ error: 'Se requiere iniciar sesión para usar TuEscritoIA.' });
   }
 
-  // Verificar token con Supabase
-  if (supabaseUrl && supabaseAnon) {
-    try {
-      const authRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'apikey': supabaseAnon,
-        },
-      });
-      if (!authRes.ok) {
-        return res.status(401).json({ error: 'Sesión inválida. Por favor inicia sesión de nuevo.' });
-      }
-    } catch {
-      return res.status(401).json({ error: 'Error al verificar la sesión.' });
+  // Fail-closed: si no podemos verificar la sesión, rechazamos el request.
+  if (!supabaseUrl || !supabaseAnon) {
+    return res.status(503).json({ error: 'Servicio de autenticación no disponible. Intenta más tarde.' });
+  }
+
+  let verifiedUserId = null;
+  try {
+    const authRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'apikey': supabaseAnon,
+      },
+    });
+    if (!authRes.ok) {
+      return res.status(401).json({ error: 'Sesión inválida. Por favor inicia sesión de nuevo.' });
     }
+    const userData = await authRes.json();
+    if (!userData?.id) {
+      return res.status(401).json({ error: 'Sesión inválida.' });
+    }
+    verifiedUserId = userData.id;
+  } catch {
+    return res.status(401).json({ error: 'Error al verificar la sesión.' });
+  }
+
+  // ── Rate limiting (por usuario autenticado) ──
+  const rl = await checkRateLimit({
+    req, supabaseUrl, supabaseAnon,
+    userId:    verifiedUserId,
+    prefix:    'escrito',
+    limit:     RATE_LIMIT_ESCRITO,
+    windowHrs: RATE_WINDOW_HOURS,
+  });
+  if (!rl.allowed) {
+    return res.status(429).json({
+      error:   `Has alcanzado el límite de ${RATE_LIMIT_ESCRITO} escritos cada ${RATE_WINDOW_HOURS} horas.`,
+      resetAt: rl.resetAt,
+    });
   }
 
   // Construir prompt con los datos del formulario

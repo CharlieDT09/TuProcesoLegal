@@ -88,9 +88,18 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  const trimmedMessages = messages.length > MAX_HISTORY_MSGS
+  // Anthropic requiere que el primer mensaje sea 'user' y que se alternen.
+  // Truncamos manteniendo los últimos N mensajes y descartando 'assistant'
+  // huérfanos al inicio si el corte cayó en mal sitio.
+  let trimmedMessages = messages.length > MAX_HISTORY_MSGS
     ? messages.slice(messages.length - MAX_HISTORY_MSGS)
-    : messages;
+    : messages.slice();
+  while (trimmedMessages.length > 0 && trimmedMessages[0].role !== 'user') {
+    trimmedMessages.shift();
+  }
+  if (trimmedMessages.length === 0) {
+    return res.status(400).json({ error: 'Sin mensajes válidos del usuario.' });
+  }
 
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   const voyageKey    = process.env.VOYAGE_API_KEY;

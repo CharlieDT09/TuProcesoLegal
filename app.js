@@ -66,10 +66,34 @@ function doLaunchChat() {
     landing.classList.remove('lp-exit');
   }, { once: true });
   appRoot.classList.add('active');
-  // Solo restaurar historial si no hay conversación activa en memoria
-  if (!currentUser && history.length === 0) restoreHistory();
+  // Restaurar historial:
+  //  - Usuario anónimo → desde localStorage
+  //  - Usuario logueado sin conversación activa → auto-cargar la última de Supabase
+  if (!currentUser && history.length === 0) {
+    restoreHistory();
+  } else if (currentUser && history.length === 0 && !currentConversationId) {
+    loadLastConversation();
+  }
   updateRateLimitUI();
   chatInput.focus();
+}
+
+async function loadLastConversation() {
+  const sb = getSupabase();
+  if (!sb || !currentUser) return;
+  try {
+    const { data } = await sb
+      .from('conversations')
+      .select('id')
+      .eq('user_id', currentUser.id)
+      .order('updated_at', { ascending: false })
+      .limit(1);
+    if (data && data.length > 0) {
+      await openConversation(data[0].id);
+    }
+  } catch (err) {
+    console.warn('[loadLastConversation]', err.message);
+  }
 }
 
 function goToLanding() {
@@ -215,6 +239,10 @@ function closeAuthModal() {
   authOverlay.classList.add('hidden');
   clearAuthMessages();
   authSkipRow.classList.add('hidden');
+  // Restaurar UI por si veníamos del panel de reset (PASSWORD_RECOVERY)
+  const tabsEl = document.querySelector('.auth-tabs');
+  if (tabsEl) tabsEl.classList.remove('hidden');
+  if (panelReset) panelReset.classList.add('hidden');
 }
 
 function switchToLogin() {
@@ -282,6 +310,13 @@ async function handleLogin() {
   loginEmail.value = '';
   loginPassword.value = '';
 
+  // Si había una conversación anónima en localStorage, migrarla a Supabase.
+  // Esperamos un tick para que onAuthStateChange asigne currentUser.
+  setTimeout(async () => {
+    const migratedId = await migrateAnonymousHistory();
+    if (migratedId) currentConversationId = migratedId;
+  }, 200);
+
   if (wasSkippable) doLaunchChat();
 }
 
@@ -347,6 +382,13 @@ async function handleRegister() {
 
   const wasSkippable = !authSkipRow.classList.contains('hidden');
   closeAuthModal();
+
+  // Migrar historial anónimo si lo había
+  setTimeout(async () => {
+    const migratedId = await migrateAnonymousHistory();
+    if (migratedId) currentConversationId = migratedId;
+  }, 200);
+
   if (wasSkippable) doLaunchChat();
 }
 
@@ -623,6 +665,59 @@ async function loadConversationMessages(conversationId) {
   return data || [];
 }
 
+// Migra el historial anónimo de localStorage a Supabase tras login/registro.
+// Devuelve el id de la conversación creada (o null si no había nada que migrar).
+async function migrateAnonymousHistory() {
+  if (!currentUser) return null;
+  const sb = getSupabase();
+  if (!sb) return null;
+
+  const raw = localStorage.getItem('tpl_history');
+  if (!raw) return null;
+
+  try {
+    const msgs = JSON.parse(raw);
+    if (!Array.isArray(msgs) || msgs.length === 0) return null;
+
+    const firstUser = msgs.find(m => m && m.role === 'user' && m.content);
+    if (!firstUser) {
+      localStorage.removeItem('tpl_history');
+      return null;
+    }
+
+    const title = firstUser.content.length > 60
+      ? firstUser.content.slice(0, 60) + '…'
+      : firstUser.content;
+
+    const { data: conv, error } = await sb
+      .from('conversations')
+      .insert({ user_id: currentUser.id, title })
+      .select('id')
+      .single();
+    if (error || !conv) return null;
+
+    const rows = msgs
+      .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+      .map(m => ({
+        conversation_id: conv.id,
+        role:    m.role,
+        content: m.content,
+        input_tokens:  0,
+        output_tokens: 0,
+      }));
+
+    if (rows.length > 0) {
+      await sb.from('messages').insert(rows);
+    }
+
+    localStorage.removeItem('tpl_history');
+    return conv.id;
+  } catch (err) {
+    console.warn('[migrate]', err.message);
+    return null;
+  }
+}
+
 async function createConversation(firstUserMessage) {
   const sb = getSupabase();
   if (!sb || !currentUser) return null;
@@ -656,7 +751,7 @@ async function saveMessagePair(userText, assistantText, usage = {}) {
       output_tokens:   usage.output_tokens || 0,
     },
   ]);
-  sb.from('conversations')
+  await sb.from('conversations')
     .update({ updated_at: new Date().toISOString() })
     .eq('id', currentConversationId);
 }
@@ -932,8 +1027,16 @@ async function sendMessage(text) {
   const userRow = messagesEl.lastElementChild;
   history.push({ role: 'user', content: text });
 
-  if (history.length > MAX_HISTORY_PAIRS * 2) {
-    history = history.slice(history.length - MAX_HISTORY_PAIRS * 2);
+  // Anthropic exige que el primer mensaje sea 'user'. Después del push, el
+  // historial siempre acaba en 'user' (impar). Mantenemos hasta 21 mensajes
+  // (10 pares + el último user) y, si tras el corte el primero es 'assistant',
+  // descartamos uno más hasta dejar 'user' al frente.
+  const MAX_MSGS = MAX_HISTORY_PAIRS * 2 + 1;
+  if (history.length > MAX_MSGS) {
+    history = history.slice(history.length - MAX_MSGS);
+  }
+  while (history.length > 0 && history[0].role !== 'user') {
+    history.shift();
   }
 
   setLoading(true);
@@ -1530,9 +1633,24 @@ function scrollToBottom() {
     }
   }
 
+  // ── Limpiar restos de markdown si Claude los devolvió ──
+  // (el system prompt pide texto plano, pero por defensa adicional)
+  function stripMarkdown(text) {
+    return text
+      .replace(/^#{1,6}\s+/gm, '')              // títulos #, ##, ###
+      .replace(/\*\*(.+?)\*\*/g, '$1')          // **negrita**
+      .replace(/__(.+?)__/g, '$1')              // __negrita__
+      .replace(/\*(.+?)\*/g, '$1')              // *cursiva*
+      .replace(/_(.+?)_/g, '$1')                // _cursiva_
+      .replace(/`(.+?)`/g, '$1')                // `código inline`
+      .replace(/^[\-\*]\s+/gm, '• ')            // - lista / * lista → •
+      .replace(/```[\s\S]*?```/g, '');          // bloques de código
+  }
+
   // ── Descargar como .doc ────────────────────────
   function handleDownload() {
-    const safe = generatedText
+    const cleaned = stripMarkdown(generatedText);
+    const safe = cleaned
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
@@ -1557,7 +1675,8 @@ function scrollToBottom() {
 
   // ── Imprimir / PDF ────────────────────────────
   function handlePrint() {
-    const safe = generatedText
+    const cleaned = stripMarkdown(generatedText);
+    const safe = cleaned
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
@@ -1752,7 +1871,16 @@ function scrollToBottom() {
       }
     } catch (err) {
       console.error('[Biblioteca browse]', err);
-      if (!appendMode) showState('no-results');
+      if (!appendMode) {
+        showState('no-results');
+      } else {
+        // Restaurar botón "Cargar más" si la red falló durante el append
+        const loadMoreBtn = document.getElementById('bibLoadMore');
+        if (loadMoreBtn) {
+          loadMoreBtn.disabled = false;
+          loadMoreBtn.textContent = '↻ Reintentar carga';
+        }
+      }
     }
   }
 
@@ -2069,6 +2197,10 @@ function scrollToBottom() {
     showStep(3);
 
     try {
+      const sb = getSupabase();
+      const sessionData = sb ? await sb.auth.getSession() : null;
+      const authToken   = sessionData?.data?.session?.access_token || null;
+
       const resp = await fetch('/api/ruta', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2079,6 +2211,7 @@ function scrollToBottom() {
           ciudad:  ciudad || 'Ciudad de Panamá',
           tieneAbogado,
           notas,
+          ...(authToken && { authToken }),
         }),
       });
 

@@ -4,6 +4,11 @@
 // Genera guía paso a paso de procesos legales panameños
 // ================================================
 
+const { checkRateLimit, verifyAuthToken } = require('../lib/rate-limit');
+
+const RATE_LIMIT_RUTA   = 5;   // 5 rutas cada 6 horas (caro: Claude 2048 tokens)
+const RATE_WINDOW_HOURS = 6;
+
 const SYSTEM_PROMPT = `Eres un experto en derecho procesal panameño con amplio conocimiento de la legislación y práctica jurídica de la República de Panamá.
 
 Tu tarea es generar una guía práctica paso a paso para que un ciudadano pueda navegar un proceso legal específico en Panamá.
@@ -49,7 +54,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
 
-  const { area, proceso, situacion, ciudad, tieneAbogado, notas } = req.body || {};
+  const { area, proceso, situacion, ciudad, tieneAbogado, notas, authToken } = req.body || {};
 
   if (!area || !proceso || !situacion) {
     return res.status(400).json({ error: 'Datos incompletos. Selecciona el proceso y describe tu situación.' });
@@ -60,6 +65,23 @@ module.exports = async function handler(req, res) {
   }
 
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  const supabaseUrl  = process.env.SUPABASE_URL;
+  const supabaseAnon = process.env.SUPABASE_ANON_KEY;
+
+  // ── Rate limiting (por usuario si hay token, si no por IP) ──
+  const userId = await verifyAuthToken({ supabaseUrl, supabaseAnon, authToken });
+  const rl = await checkRateLimit({
+    req, supabaseUrl, supabaseAnon, userId,
+    prefix:    'ruta',
+    limit:     RATE_LIMIT_RUTA,
+    windowHrs: RATE_WINDOW_HOURS,
+  });
+  if (!rl.allowed) {
+    return res.status(429).json({
+      error:   `Has alcanzado el límite de ${RATE_LIMIT_RUTA} rutas procesales cada ${RATE_WINDOW_HOURS} horas.`,
+      resetAt: rl.resetAt,
+    });
+  }
 
   const userPrompt = `Genera la ruta procesal para el siguiente caso:
 

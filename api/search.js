@@ -8,8 +8,12 @@
 //   2. search: con query, búsqueda semántica con Voyage AI + pgvector
 // ================================================
 
-const RAG_MATCH_COUNT = 12;
-const RAG_THRESHOLD   = 0.38;   // umbral más permisivo para términos cortos
+const { checkRateLimit } = require('../lib/rate-limit');
+
+const RAG_MATCH_COUNT  = 12;
+const RAG_THRESHOLD    = 0.38;   // umbral más permisivo para términos cortos
+const RATE_LIMIT_SEARCH = 30;    // 30 búsquedas cada hora por IP
+const RATE_WINDOW_HRS   = 1;
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -33,6 +37,20 @@ module.exports = async function handler(req, res) {
   const PAGE_SIZE = 20;
   const limit     = Math.min(Number(match_count) || PAGE_SIZE, 50);
   const pageOffset = Math.max(Number(offset) || 0, 0);
+
+  // ── Rate limiting (por IP — endpoint sin auth) ──
+  const rl = await checkRateLimit({
+    req, supabaseUrl, supabaseAnon,
+    prefix:    'search',
+    limit:     RATE_LIMIT_SEARCH,
+    windowHrs: RATE_WINDOW_HRS,
+  });
+  if (!rl.allowed) {
+    return res.status(429).json({
+      error:   `Demasiadas búsquedas. Intenta de nuevo en una hora.`,
+      resetAt: rl.resetAt,
+    });
+  }
 
   try {
 
