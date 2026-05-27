@@ -518,16 +518,58 @@ async function openHistoryDrawer() {
 
   historyList.innerHTML = '';
   conversations.forEach(conv => {
-    const item = document.createElement('button');
+    const item = document.createElement('div');
     item.className = 'history-item' + (conv.id === currentConversationId ? ' active' : '');
     item.setAttribute('role', 'listitem');
+    item.dataset.convId = conv.id;
     item.innerHTML = `
-      <span class="history-item-title">${escapeHtml(conv.title)}</span>
-      <span class="history-item-date">${formatRelativeDate(conv.updated_at)}</span>
+      <button class="history-item-body" aria-label="Abrir conversación">
+        <span class="history-item-title">${escapeHtml(conv.title)}</span>
+        <span class="history-item-date">${formatRelativeDate(conv.updated_at)}</span>
+      </button>
+      <button class="history-item-delete" aria-label="Eliminar conversación" title="Eliminar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6M14 11v6"/>
+          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+        </svg>
+      </button>
     `;
-    item.addEventListener('click', () => openConversation(conv.id));
+    item.querySelector('.history-item-body').addEventListener('click', () => openConversation(conv.id));
+    item.querySelector('.history-item-delete').addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteConversation(conv.id, item);
+    });
     historyList.appendChild(item);
   });
+}
+
+async function deleteConversation(convId, itemEl) {
+  const sb = getSupabase();
+  if (!sb || !currentUser) return;
+
+  // Feedback visual inmediato
+  itemEl.classList.add('history-item-deleting');
+
+  // Borrar mensajes y conversación en Supabase
+  await sb.from('messages').delete().eq('conversation_id', convId);
+  await sb.from('conversations').delete().eq('id', convId).eq('user_id', currentUser.id);
+
+  // Animar salida y remover del DOM
+  itemEl.addEventListener('animationend', () => itemEl.remove(), { once: true });
+
+  // Si era la conversación activa, limpiar el chat
+  if (convId === currentConversationId) {
+    resetChat();
+  }
+
+  // Si no quedan más items, mostrar mensaje vacío
+  setTimeout(() => {
+    if (historyList.querySelectorAll('.history-item').length === 0) {
+      historyList.innerHTML = '<p class="history-empty">No tienes consultas guardadas aún.<br>¡Envía tu primera pregunta!</p>';
+    }
+  }, 300);
 }
 
 function closeHistoryDrawer() {

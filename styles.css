@@ -1231,20 +1231,43 @@ html, body {
 
 .history-item {
   width: 100%;
-  background: none;
-  border: none;
   border-radius: 10px;
-  padding: 11px 12px;
-  cursor: pointer;
-  text-align: left;
-  transition: background 0.15s;
+  transition: background 0.15s, opacity 0.25s, transform 0.25s;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 4px;
+  padding: 2px 4px 2px 0;
 }
 
 .history-item:hover { background: rgba(255, 255, 255, 0.05); }
 .history-item.active { background: var(--gold-dim); }
+
+/* Animación de borrado */
+.history-item-deleting {
+  opacity: 0;
+  transform: translateX(12px);
+  pointer-events: none;
+  animation: fadeSlideOut 0.25s ease forwards;
+}
+
+@keyframes fadeSlideOut {
+  to { opacity: 0; transform: translateX(12px); max-height: 0; margin: 0; padding: 0; }
+}
+
+/* Cuerpo clickeable (título + fecha) */
+.history-item-body {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  padding: 9px 8px 9px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-radius: 8px;
+}
 
 .history-item-title {
   font-size: 13px;
@@ -1259,6 +1282,28 @@ html, body {
 .history-item-date {
   font-size: 11px;
   color: var(--dim);
+}
+
+/* Botón de borrar */
+.history-item-delete {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  border-radius: 7px;
+  color: var(--dim);
+  cursor: pointer;
+  padding: 7px 8px;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.history-item:hover .history-item-delete { opacity: 1; }
+.history-item-delete:hover {
+  color: #e06060;
+  background: rgba(220, 60, 60, 0.12);
 }
 
 .history-loading,
