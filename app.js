@@ -66,13 +66,15 @@ function doLaunchChat() {
     landing.classList.remove('lp-exit');
   }, { once: true });
   appRoot.classList.add('active');
-  if (!currentUser) restoreHistory();
+  // Solo restaurar historial si no hay conversación activa en memoria
+  if (!currentUser && history.length === 0) restoreHistory();
   updateRateLimitUI();
   chatInput.focus();
 }
 
 function goToLanding() {
-  resetChat();
+  // Solo ocultar el chat — NO borrar la conversación ni el historial
+  // El usuario puede volver y continuar donde lo dejó
   isLoading = false;
   chatInput.disabled = false;
   typingIndicator.classList.add('hidden');
@@ -865,6 +867,13 @@ async function sendMessage(text) {
     showError(`Has alcanzado el límite de ${cap} consultas por cada 6 horas.`);
     updateRateLimitUI();
     return;
+  }
+
+  // Si el chat no está activo (usuario en landing), lanzarlo primero
+  if (!appRoot.classList.contains('active')) {
+    doLaunchChat();
+    // Esperar a que la animación de entrada termine antes de continuar
+    await new Promise(r => setTimeout(r, 280));
   }
 
   welcomeScreen.classList.add('hidden');
