@@ -1823,3 +1823,334 @@ function scrollToBottom() {
     return String(str).replace(/"/g, '&quot;');
   }
 }());
+
+
+// ════════════════════════════════════════════════════════════════
+// RUTA PROCESAL — JuriTool
+// ════════════════════════════════════════════════════════════════
+(function RutaProcesal() {
+
+  // ── Catálogo de áreas y procesos ───────────────
+  const AREAS = {
+    laboral: {
+      emoji: '👔', label: 'Laboral',
+      desc: 'Despidos, reclamos, denuncias laborales',
+      procesos: [
+        'Demanda por despido injustificado',
+        'Reclamo de prestaciones laborales (décimos, vacaciones)',
+        'Denuncia ante el MITRADEL',
+        'Reclamación por accidente de trabajo',
+        'Reclamo de salarios retenidos',
+        'Otro proceso laboral',
+      ],
+    },
+    civil: {
+      emoji: '⚖️', label: 'Civil',
+      desc: 'Cobros, desahucio, herencias, daños',
+      procesos: [
+        'Demanda de cobro (proceso sumario)',
+        'Proceso de desahucio / inquilinato',
+        'Proceso sucesorio / herencia',
+        'Demanda por daños y perjuicios',
+        'Prescripción adquisitiva de dominio',
+        'Otro proceso civil',
+      ],
+    },
+    familia: {
+      emoji: '👨‍👩‍👧', label: 'Familia',
+      desc: 'Divorcio, pensión, custodia, adopción',
+      procesos: [
+        'Divorcio por mutuo acuerdo',
+        'Divorcio contencioso',
+        'Reclamación de pensión alimenticia',
+        'Proceso de guarda y crianza (custodia)',
+        'Adopción',
+        'Reconocimiento de paternidad',
+      ],
+    },
+    penal: {
+      emoji: '🔏', label: 'Penal',
+      desc: 'Denuncias, habeas corpus, apelaciones',
+      procesos: [
+        'Denuncia penal ante el Ministerio Público',
+        'Querella por delito privado',
+        'Solicitud de habeas corpus',
+        'Recurso de apelación penal',
+        'Otro proceso penal',
+      ],
+    },
+    administrativo: {
+      emoji: '🏛️', label: 'Administrativo',
+      desc: 'Recursos, amparos, quejas al Estado',
+      procesos: [
+        'Recurso de reconsideración administrativa',
+        'Recurso de apelación ante tribunal administrativo',
+        'Amparo de garantías constitucionales',
+        'Queja ante la Defensoría del Pueblo',
+        'Reclamación ante la Autoridad de Protección al Consumidor (ACODECO)',
+        'Otro proceso administrativo',
+      ],
+    },
+  };
+
+  // ── Referencias DOM ────────────────────────────
+  const overlay       = document.getElementById('rutaOverlay');
+  const rutaCard      = document.getElementById('jtRutaCard');
+  const closeBtn      = document.getElementById('rutaClose');
+  const subtitle      = document.getElementById('rutaSubtitle');
+  const step1         = document.getElementById('rutaStep1');
+  const step2         = document.getElementById('rutaStep2');
+  const step3         = document.getElementById('rutaStep3');
+  const step4         = document.getElementById('rutaStep4');
+  const areasEl       = document.getElementById('rutaAreas');
+  const formContainer = document.getElementById('rutaFormContainer');
+  const formError     = document.getElementById('rutaFormError');
+  const backBtn       = document.getElementById('rutaBackBtn');
+  const generateBtn   = document.getElementById('rutaGenerateBtn');
+  const resultado     = document.getElementById('rutaResultado');
+  const copyBtn       = document.getElementById('rutaCopyBtn');
+  const newBtn        = document.getElementById('rutaNewBtn');
+
+  if (!overlay || !rutaCard) return;
+
+  let selectedArea    = null;
+  let lastRutaText    = '';
+
+  // ── Abrir / Cerrar ─────────────────────────────
+  function openRuta() {
+    overlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    goToStep1();
+  }
+
+  function closeRuta() {
+    overlay.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  // ── Navegación entre pasos ─────────────────────
+  function showStep(n) {
+    [step1, step2, step3, step4].forEach((s, i) => s.classList.toggle('hidden', i !== n - 1));
+    overlay.scrollTop = 0;
+  }
+
+  function goToStep1() {
+    selectedArea = null;
+    subtitle.textContent = 'Selecciona el área del derecho';
+    renderAreas();
+    showStep(1);
+  }
+
+  function goToStep2(areaKey) {
+    selectedArea = areaKey;
+    const area = AREAS[areaKey];
+    subtitle.textContent = `${area.emoji} ${area.label}`;
+    renderForm(area);
+    showStep(2);
+  }
+
+  // ── Render áreas (paso 1) ──────────────────────
+  function renderAreas() {
+    areasEl.innerHTML = Object.entries(AREAS).map(([key, a]) => `
+      <button class="ruta-area-card" data-area="${key}" type="button" aria-label="${a.label}">
+        <span class="ruta-area-emoji">${a.emoji}</span>
+        <span class="ruta-area-label">${a.label}</span>
+        <span class="ruta-area-desc">${a.desc}</span>
+      </button>
+    `).join('');
+
+    areasEl.querySelectorAll('.ruta-area-card').forEach(card => {
+      card.addEventListener('click', () => goToStep2(card.dataset.area));
+    });
+  }
+
+  // ── Render formulario (paso 2) ─────────────────
+  function renderForm(area) {
+    const options = area.procesos.map(p => `<option value="${p}">${p}</option>`).join('');
+    formContainer.innerHTML = `
+      <p class="ruta-form-title">${area.emoji} <span>${area.label}</span></p>
+
+      <div class="ruta-field">
+        <label for="rutaProceso">Tipo de proceso *</label>
+        <select id="rutaProceso">
+          <option value="">— Selecciona un proceso —</option>
+          ${options}
+        </select>
+      </div>
+
+      <div class="ruta-field">
+        <label for="rutaSituacion">Describe tu situación *</label>
+        <textarea id="rutaSituacion" placeholder="Explica brevemente qué ocurrió, fechas relevantes, qué buscas lograr…" rows="4"></textarea>
+      </div>
+
+      <div class="ruta-field">
+        <label for="rutaCiudad">Ciudad donde tramitarás el proceso</label>
+        <input id="rutaCiudad" type="text" placeholder="Ej: Ciudad de Panamá, Colón, David…" />
+      </div>
+
+      <label class="ruta-checkbox-row">
+        <input type="checkbox" id="rutaTieneAbogado" />
+        Ya tengo abogado contratado
+      </label>
+
+      <div class="ruta-field" style="margin-top:12px">
+        <label for="rutaNotas">Información adicional (opcional)</label>
+        <textarea id="rutaNotas" placeholder="Cualquier dato adicional que consideres relevante…" rows="2"></textarea>
+      </div>
+    `;
+  }
+
+  // ── Generación de ruta ─────────────────────────
+  async function generarRuta() {
+    const proceso      = document.getElementById('rutaProceso')?.value.trim();
+    const situacion    = document.getElementById('rutaSituacion')?.value.trim();
+    const ciudad       = document.getElementById('rutaCiudad')?.value.trim();
+    const tieneAbogado = document.getElementById('rutaTieneAbogado')?.checked;
+    const notas        = document.getElementById('rutaNotas')?.value.trim();
+
+    // Validación
+    formError.classList.add('hidden');
+    if (!proceso) { showError('Selecciona el tipo de proceso.'); return; }
+    if (!situacion || situacion.length < 20) { showError('Describe tu situación con al menos 20 caracteres.'); return; }
+
+    generateBtn.disabled = true;
+    generateBtn.textContent = 'Generando…';
+    showStep(3);
+
+    try {
+      const resp = await fetch('/api/ruta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          area:    AREAS[selectedArea].label,
+          proceso,
+          situacion,
+          ciudad:  ciudad || 'Ciudad de Panamá',
+          tieneAbogado,
+          notas,
+        }),
+      });
+
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        showStep(2);
+        showError(data.error || 'Error al generar la ruta. Intenta de nuevo.');
+        return;
+      }
+
+      renderResultado(data);
+      lastRutaText = buildTextoPlano(data);
+      showStep(4);
+
+    } catch {
+      showStep(2);
+      showError('Error de conexión. Verifica tu internet e intenta de nuevo.');
+    } finally {
+      generateBtn.disabled = false;
+      generateBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg> Generar mi Ruta Procesal`;
+    }
+  }
+
+  // ── Render resultado (paso 4) ──────────────────
+  function renderResultado(data) {
+    const { titulo, intro, duracion, pasos = [], consejos = [] } = data;
+
+    const pasosHTML = pasos.map(p => `
+      <div class="ruta-paso-card">
+        <div class="ruta-paso-num">${p.n}</div>
+        <div class="ruta-paso-body">
+          <p class="ruta-paso-titulo">${esc(p.titulo)}</p>
+          <p class="ruta-paso-desc">${esc(p.que_hacer)}</p>
+          <div class="ruta-paso-meta">
+            ${p.donde ? `<span class="ruta-meta-chip">🏢 ${esc(p.donde)}</span>` : ''}
+            ${p.plazo ? `<span class="ruta-meta-chip">⏱ ${esc(p.plazo)}</span>` : ''}
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    const consejosHTML = consejos.length ? `
+      <div class="ruta-consejos">
+        <p class="ruta-consejos-titulo">💡 Consejos prácticos</p>
+        <ul>${consejos.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
+      </div>
+    ` : '';
+
+    resultado.innerHTML = `
+      <div class="ruta-intro-card">
+        <p class="ruta-intro-titulo">${esc(titulo || '')}</p>
+        <p class="ruta-intro-texto">${esc(intro || '')}</p>
+        ${duracion ? `<span class="ruta-duracion-badge">⏳ Duración estimada: ${esc(duracion)}</span>` : ''}
+      </div>
+      <div class="ruta-pasos-lista">${pasosHTML}</div>
+      ${consejosHTML}
+    `;
+  }
+
+  // ── Texto plano para copiar ────────────────────
+  function buildTextoPlano(data) {
+    const { titulo, intro, duracion, pasos = [], consejos = [] } = data;
+    let txt = `${titulo}\n${'─'.repeat(titulo?.length || 20)}\n\n`;
+    if (intro) txt += `${intro}\n`;
+    if (duracion) txt += `Duración estimada: ${duracion}\n`;
+    txt += '\n';
+    pasos.forEach(p => {
+      txt += `PASO ${p.n}: ${p.titulo}\n${p.que_hacer}\n`;
+      if (p.donde) txt += `Dónde: ${p.donde}\n`;
+      if (p.plazo)  txt += `Plazo: ${p.plazo}\n`;
+      txt += '\n';
+    });
+    if (consejos.length) {
+      txt += 'CONSEJOS PRÁCTICOS:\n';
+      consejos.forEach(c => { txt += `• ${c}\n`; });
+    }
+    txt += '\n⚠️ Guía orientativa generada con IA. Consulta con un abogado colegiado para asesoría personalizada.';
+    return txt;
+  }
+
+  // ── Helpers ────────────────────────────────────
+  function showError(msg) {
+    formError.textContent = msg;
+    formError.classList.remove('hidden');
+    showStep(2);
+  }
+
+  function esc(str) {
+    return String(str || '').replace(/[&<>"']/g, c =>
+      ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])
+    );
+  }
+
+  // ── Listeners ──────────────────────────────────
+  rutaCard.addEventListener('click', () => {
+    const jtOverlay = document.getElementById('jtOverlay');
+    if (jtOverlay) jtOverlay.classList.add('hidden');
+    openRuta();
+  });
+  rutaCard.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rutaCard.click(); }
+  });
+
+  closeBtn.addEventListener('click', closeRuta);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeRuta(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !overlay.classList.contains('hidden')) closeRuta();
+  });
+
+  backBtn.addEventListener('click', goToStep1);
+  generateBtn.addEventListener('click', generarRuta);
+  newBtn.addEventListener('click', goToStep1);
+
+  copyBtn.addEventListener('click', async () => {
+    if (!lastRutaText) return;
+    try {
+      await navigator.clipboard.writeText(lastRutaText);
+      copyBtn.textContent = '✓ Copiado';
+      setTimeout(() => {
+        copyBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar`;
+      }, 2000);
+    } catch { /* clipboard sin permiso */ }
+  });
+
+}());

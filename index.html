@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,700;6..96,800&family=Inter:wght@400;500;600;700&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=8" />
+  <link rel="stylesheet" href="styles.css?v=9" />
   <!-- CSS crítico: evita flash de contenido sin estilo antes de que cargue styles.css -->
   <style>
     html, body { background: #070c18; }
@@ -20,8 +20,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js" defer></script>
-  <script src="app.js?v=8" defer></script>
-  <script src="quiz.js?v=8" defer></script>
+  <script src="app.js?v=9" defer></script>
+  <script src="quiz.js?v=9" defer></script>
 </head>
 <body>
 
@@ -408,8 +408,8 @@
       <!-- Lista de herramientas -->
       <div class="jt-list" id="jtList">
 
-        <!-- Ruta Procesal (próximamente) -->
-        <div class="jt-card" role="button" tabindex="0" aria-label="Ruta Procesal — próximamente">
+        <!-- Ruta Procesal (ACTIVO) -->
+        <div class="jt-card jt-card-live" id="jtRutaCard" role="button" tabindex="0" aria-label="Ruta Procesal — guía paso a paso">
           <div class="jt-card-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <polyline points="9 18 15 12 9 6"/>
@@ -421,7 +421,7 @@
             <div class="jt-card-name">Ruta Procesal</div>
             <div class="jt-card-desc">Guía paso a paso para navegar cualquier proceso judicial en Panamá.</div>
           </div>
-          <span class="jt-soon-tag" aria-label="Próximamente">Próximamente</span>
+          <span class="jt-card-arrow" aria-hidden="true">→</span>
         </div>
 
         <!-- TuEscritoIA (ACTIVO) -->
@@ -477,6 +477,73 @@
     </aside>
     <div class="jt-backdrop" id="jtBackdrop" aria-hidden="true"></div>
   </div>
+
+  <!-- ══ RUTA PROCESAL — MODAL ════════════════════ -->
+  <div class="ruta-overlay hidden" id="rutaOverlay" role="dialog" aria-modal="true" aria-label="Ruta Procesal">
+    <div class="ruta-modal">
+
+      <!-- Header sticky -->
+      <div class="ruta-header">
+        <div class="ruta-header-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true" style="color:var(--gold);flex-shrink:0">
+            <polyline points="9 18 15 12 9 6"/>
+            <line x1="3" y1="12" x2="15" y2="12"/>
+            <circle cx="19" cy="12" r="2"/>
+          </svg>
+          <div>
+            <h2 class="ruta-title">Ruta Procesal</h2>
+            <p class="ruta-subtitle" id="rutaSubtitle">Selecciona el área del derecho</p>
+          </div>
+        </div>
+        <button class="ruta-close" id="rutaClose" aria-label="Cerrar Ruta Procesal">✕</button>
+      </div>
+
+      <!-- Step 1: Área del derecho -->
+      <div class="ruta-step" id="rutaStep1">
+        <p class="ruta-step-desc">¿En qué área legal necesitas orientación?</p>
+        <div class="ruta-areas" id="rutaAreas">
+          <!-- Generado por JS -->
+        </div>
+      </div>
+
+      <!-- Step 2: Proceso + datos del caso -->
+      <div class="ruta-step hidden" id="rutaStep2">
+        <button class="ruta-back" id="rutaBackBtn" aria-label="Volver a áreas">← Volver</button>
+        <div id="rutaFormContainer"></div>
+        <div class="ruta-form-error hidden" id="rutaFormError" role="alert"></div>
+        <button class="ruta-generate-btn" id="rutaGenerateBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
+          Generar mi Ruta Procesal
+        </button>
+      </div>
+
+      <!-- Step 3: Generando -->
+      <div class="ruta-step hidden" id="rutaStep3">
+        <div class="ruta-generating">
+          <div class="ruta-spinner" aria-hidden="true"></div>
+          <p class="ruta-generating-title">Analizando tu situación…</p>
+          <span class="ruta-generating-sub">Consultando la legislación panameña aplicable</span>
+        </div>
+      </div>
+
+      <!-- Step 4: Resultado -->
+      <div class="ruta-step hidden" id="rutaStep4">
+        <div class="ruta-result-header">
+          <span class="ruta-result-tag">✓ Ruta generada</span>
+          <div class="ruta-result-actions">
+            <button class="ruta-action-btn" id="rutaCopyBtn" title="Copiar al portapapeles">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copiar
+            </button>
+          </div>
+        </div>
+        <div id="rutaResultado" aria-label="Ruta generada"></div>
+        <button class="ruta-new-btn" id="rutaNewBtn">↺ Consultar otro proceso</button>
+        <p class="ruta-disclaimer">⚠️ Guía orientativa generada con IA · Consulta con un abogado colegiado para asesoría personalizada</p>
+      </div>
+
+    </div><!-- /.ruta-modal -->
+  </div><!-- /.ruta-overlay -->
 
   <!-- ══ BIBLIOTECA JURÍDICA — MODAL ══════════════ -->
   <div class="bib-overlay hidden" id="bibOverlay" role="dialog" aria-modal="true" aria-label="Biblioteca Jurídica">

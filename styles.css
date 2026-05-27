@@ -2859,3 +2859,483 @@ html, body {
   .escrito-actions { gap: 4px; }
   .escrito-action-btn { font-size: 11px; padding: 6px 9px; }
 }
+
+/* ══════════════════════════════════════════════════════
+   RUTA PROCESAL — Modal
+══════════════════════════════════════════════════════ */
+
+.ruta-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(0,0,0,0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  backdrop-filter: blur(4px);
+}
+
+.ruta-modal {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 660px;
+  max-height: 92vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.65), 0 0 0 1px rgba(192,157,60,0.08);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(192,157,60,0.2) transparent;
+}
+
+/* ── Header ────────────────────────────────────── */
+.ruta-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 16px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg2);
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.ruta-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ruta-title {
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--fg);
+  margin: 0 0 2px;
+}
+
+.ruta-subtitle {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.ruta-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+  line-height: 1;
+}
+.ruta-close:hover { color: var(--fg); background: var(--hover); }
+
+/* ── Steps ──────────────────────────────────────── */
+.ruta-step {
+  padding: 24px 22px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ruta-step-desc {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* ── Área cards (paso 1) ────────────────────────── */
+.ruta-areas {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.ruta-area-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 14px 12px;
+  cursor: pointer;
+  transition: background 0.17s, border-color 0.17s, transform 0.15s;
+  text-align: left;
+}
+
+.ruta-area-card:hover {
+  background: var(--gold-dim);
+  border-color: rgba(192,157,60,0.45);
+  transform: translateY(-1px);
+}
+.ruta-area-card:active { transform: translateY(0); }
+
+.ruta-area-emoji { font-size: 22px; line-height: 1; }
+
+.ruta-area-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.ruta-area-desc {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* ── Formulario (paso 2) ────────────────────────── */
+.ruta-back {
+  background: none;
+  border: none;
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 4px;
+  transition: opacity 0.15s;
+}
+.ruta-back:hover { opacity: 0.75; }
+
+.ruta-form-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ruta-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.ruta-field label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.ruta-field select,
+.ruta-field input,
+.ruta-field textarea {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: var(--fg);
+  font-size: 14px;
+  font-family: var(--sans);
+  padding: 10px 12px;
+  transition: border-color 0.15s;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ruta-field select:focus,
+.ruta-field input:focus,
+.ruta-field textarea:focus {
+  border-color: var(--gold);
+}
+
+.ruta-field select { cursor: pointer; }
+.ruta-field textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
+
+.ruta-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+.ruta-checkbox-row input[type="checkbox"] {
+  width: 16px; height: 16px;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+
+.ruta-form-error {
+  background: rgba(220,60,60,0.12);
+  border: 1px solid rgba(220,60,60,0.3);
+  border-radius: 8px;
+  color: #e07070;
+  font-size: 13px;
+  padding: 10px 14px;
+}
+
+.ruta-generate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--gold);
+  color: #0f1117;
+  border: none;
+  border-radius: 12px;
+  padding: 13px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--sans);
+  cursor: pointer;
+  transition: opacity 0.18s, transform 0.15s;
+  margin-top: 4px;
+}
+.ruta-generate-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+.ruta-generate-btn:active { transform: translateY(0); }
+.ruta-generate-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* ── Generando (paso 3) ─────────────────────────── */
+.ruta-generating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 20px;
+  gap: 16px;
+}
+
+.ruta-spinner {
+  width: 40px; height: 40px;
+  border: 3px solid rgba(192,157,60,0.2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+.ruta-generating-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fg);
+  margin: 0;
+}
+
+.ruta-generating-sub {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ── Resultado (paso 4) ─────────────────────────── */
+.ruta-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ruta-result-tag {
+  background: rgba(56,200,100,0.15);
+  color: #5dd08c;
+  border: 1px solid rgba(56,200,100,0.25);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+}
+
+.ruta-result-actions { display: flex; gap: 6px; }
+
+.ruta-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-family: var(--sans);
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.ruta-action-btn:hover { color: var(--fg); border-color: var(--gold); background: var(--gold-dim); }
+
+/* Intro card */
+.ruta-intro-card {
+  background: var(--gold-dim);
+  border: 1px solid rgba(192,157,60,0.25);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+.ruta-intro-titulo {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gold);
+  margin: 0 0 6px;
+  font-family: var(--serif);
+}
+
+.ruta-intro-texto {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
+
+.ruta-duracion-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(192,157,60,0.15);
+  border: 1px solid rgba(192,157,60,0.3);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold);
+  padding: 4px 11px;
+}
+
+/* Paso cards */
+.ruta-pasos-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.ruta-paso-card {
+  display: flex;
+  gap: 14px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: border-color 0.15s;
+}
+.ruta-paso-card:hover { border-color: rgba(192,157,60,0.3); }
+
+.ruta-paso-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: #0f1117;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.ruta-paso-body { flex: 1; min-width: 0; }
+
+.ruta-paso-titulo {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg);
+  margin: 0 0 5px;
+}
+
+.ruta-paso-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0 0 8px;
+}
+
+.ruta-paso-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ruta-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--dim);
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 8px;
+}
+
+/* Consejos */
+.ruta-consejos {
+  background: rgba(80,130,255,0.07);
+  border: 1px solid rgba(80,130,255,0.18);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+
+.ruta-consejos-titulo {
+  font-size: 13px;
+  font-weight: 600;
+  color: #7eaaff;
+  margin: 0 0 8px;
+}
+
+.ruta-consejos ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ruta-consejos li {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+/* Botones finales */
+.ruta-new-btn {
+  display: block;
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-family: var(--sans);
+  padding: 11px;
+  cursor: pointer;
+  text-align: center;
+  transition: color 0.15s, border-color 0.15s;
+  margin-bottom: 12px;
+}
+.ruta-new-btn:hover { color: var(--fg); border-color: var(--gold); }
+
+.ruta-disclaimer {
+  font-size: 11px;
+  color: var(--dim);
+  text-align: center;
+  margin: 0;
+  padding: 0 8px;
+  line-height: 1.5;
+}
+
+/* ── Responsive ─────────────────────────────────── */
+@media (max-width: 520px) {
+  .ruta-modal { max-height: 96vh; border-radius: 14px 14px 0 0; }
+  .ruta-overlay { padding: 0; align-items: flex-end; }
+  .ruta-areas { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ruta-area-card { padding: 12px 12px 10px; }
+  .ruta-area-emoji { font-size: 18px; }
+  .ruta-area-label { font-size: 13px; }
+}
