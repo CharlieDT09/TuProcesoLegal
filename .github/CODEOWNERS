@@ -1,0 +1,17 @@
+# CODEOWNERS — revisores automáticos por ruta.
+# Reemplaza @CharlieDT09 por los usuarios reales del equipo.
+# Sintaxis: <patrón>  <@usuario1> <@usuario2>
+
+# Dueño por defecto de todo el repositorio
+*                 @CharlieDT09
+
+# Backend / funciones serverless
+/api/             @CharlieDT09
+/lib/             @CharlieDT09
+
+# Base de datos y scripts de ingesta
+/database/        @CharlieDT09
+
+# Infraestructura y configuración
+/vercel.json      @CharlieDT09
+/.github/         @CharlieDT09
