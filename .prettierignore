@@ -1,0 +1,8 @@
+node_modules/
+database/node_modules/
+.vercel/
+.netlify/
+.claude/
+*.min.js
+*.min.css
+TuProcesoIA_Project_Overview.pdf
