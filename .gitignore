@@ -1,22 +1,33 @@
-# Variables de entorno — NUNCA subir al repo
+# ── Variables de entorno — NUNCA subir al repo ───────────────────
 .env
-.env.local
-.env.production
+.env.*
+!.env.example
 database/.env
+database/.env.*
+!database/.env.example
 
-# Dependencias
+# ── Dependencias ─────────────────────────────────────────────────
 node_modules/
 database/node_modules/
 
-# Plataformas (ya no usados)
-.netlify/
+# ── Plataformas / Deploy ─────────────────────────────────────────
+.vercel/
+.netlify/            # ya no se usa
 
-# Claude Code
+# ── Herramientas de IA ───────────────────────────────────────────
 .claude/
+.cursor/
 
-# Logs y temporales
+# ── Logs y temporales ────────────────────────────────────────────
 *.log
-.DS_Store
+npm-debug.log*
 __pycache__/
 *.pyc
 *.pyo
+
+# ── Sistema operativo / Editores ─────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
